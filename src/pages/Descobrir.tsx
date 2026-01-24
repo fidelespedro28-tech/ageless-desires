@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import BackgroundGrid from "@/components/BackgroundGrid";
 import ProfileCard from "@/components/ProfileCard";
 import MatchPopup from "@/components/MatchPopup";
+import VipPaymentPopup from "@/components/VipPaymentPopup";
 import { Heart, X, Crown, DollarSign, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -76,17 +77,36 @@ const Descobrir = () => {
   const [showMatch, setShowMatch] = useState(false);
   const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showVipPayment, setShowVipPayment] = useState(false);
+  const [likesRemaining, setLikesRemaining] = useState(6);
+  const [dislikesRemaining, setDislikesRemaining] = useState(3);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
+  // Check if limits reached and show VIP popup
+  useEffect(() => {
+    if (likesRemaining <= 0 && dislikesRemaining <= 0) {
+      const timer = setTimeout(() => {
+        setShowVipPayment(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [likesRemaining, dislikesRemaining]);
+
   const currentProfile = profiles[currentIndex % profiles.length];
 
   const handleLike = () => {
+    if (likesRemaining <= 0) {
+      setShowVipPayment(true);
+      return;
+    }
+
     const newLikes = likes + 1;
     setLikes(newLikes);
+    setLikesRemaining((prev) => Math.max(0, prev - 1));
     
     // Random reward
     if (Math.random() > 0.3) {
@@ -107,8 +127,23 @@ const Descobrir = () => {
   };
 
   const handleDislike = () => {
+    if (dislikesRemaining <= 0) {
+      setShowVipPayment(true);
+      return;
+    }
+
     setDislikes((prev) => prev + 1);
+    setDislikesRemaining((prev) => Math.max(0, prev - 1));
     setCurrentIndex((prev) => prev + 1);
+  };
+
+  const handleVipPurchase = () => {
+    setShowVipPayment(false);
+    setLikesRemaining(999);
+    setDislikesRemaining(999);
+    toast.success("🎉 VIP Ativado!", {
+      description: "Agora você tem acesso ilimitado!"
+    });
   };
 
   if (isLoading) {
@@ -144,15 +179,19 @@ const Descobrir = () => {
             <span className="font-semibold">R${balance.toFixed(2)}</span>
           </div>
 
-          {/* Stats */}
+          {/* Stats with remaining */}
           <div className="flex items-center gap-3 text-sm">
             <div className="flex items-center gap-1">
               <Heart className="w-4 h-4 text-primary fill-primary" />
-              <span className="text-foreground">{likes}</span>
+              <span className={`font-semibold ${likesRemaining <= 2 ? 'text-destructive' : 'text-foreground'}`}>
+                {likesRemaining}
+              </span>
             </div>
             <div className="flex items-center gap-1">
-              <X className="w-4 h-4 text-destructive" />
-              <span className="text-foreground">{dislikes}</span>
+              <X className="w-4 h-4 text-muted-foreground" />
+              <span className={`font-semibold ${dislikesRemaining <= 1 ? 'text-destructive' : 'text-foreground'}`}>
+                {dislikesRemaining}
+              </span>
             </div>
           </div>
         </div>
@@ -192,6 +231,13 @@ const Descobrir = () => {
           navigate("/chat", { state: { profile: matchedProfile } });
         }}
         onClose={() => setShowMatch(false)}
+      />
+
+      {/* VIP Payment Popup */}
+      <VipPaymentPopup
+        isOpen={showVipPayment}
+        onClose={() => setShowVipPayment(false)}
+        onPurchase={handleVipPurchase}
       />
     </div>
   );
