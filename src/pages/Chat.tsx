@@ -4,9 +4,11 @@ import BackgroundGrid from "@/components/BackgroundGrid";
 import ChatMessage from "@/components/ChatMessage";
 import GiftNotification from "@/components/GiftNotification";
 import PixPopup from "@/components/PixPopup";
+import VipPaymentPopup from "@/components/VipPaymentPopup";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Send, Mic, DollarSign } from "lucide-react";
+import { ArrowLeft, Send, Mic, DollarSign, Crown } from "lucide-react";
+import { toast } from "sonner";
 
 import julianaImg from "@/assets/models/juliana.jpg";
 
@@ -43,7 +45,9 @@ const Chat = () => {
   const [balance, setBalance] = useState(0);
   const [showGiftNotification, setShowGiftNotification] = useState(false);
   const [showPixPopup, setShowPixPopup] = useState(false);
+  const [showVipPayment, setShowVipPayment] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [messagesRemaining, setMessagesRemaining] = useState(5);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -76,6 +80,11 @@ const Chat = () => {
   const sendMessage = () => {
     if (!inputValue.trim()) return;
 
+    if (messagesRemaining <= 0) {
+      setShowVipPayment(true);
+      return;
+    }
+
     const userMessage: Message = {
       id: messages.length + 1,
       content: inputValue,
@@ -85,6 +94,14 @@ const Chat = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
+    setMessagesRemaining((prev) => Math.max(0, prev - 1));
+
+    // Show VIP popup when messages run out
+    if (messagesRemaining <= 1) {
+      setTimeout(() => {
+        setShowVipPayment(true);
+      }, 3000);
+    }
 
     // Simulate typing
     setIsTyping(true);
@@ -100,6 +117,14 @@ const Chat = () => {
       };
       setMessages((prev) => [...prev, modelMessage]);
     }, 2000 + Math.random() * 2000);
+  };
+
+  const handleVipPurchase = () => {
+    setShowVipPayment(false);
+    setMessagesRemaining(999);
+    toast.success("🎉 VIP Ativado!", {
+      description: "Mensagens ilimitadas desbloqueadas!"
+    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -153,9 +178,14 @@ const Chat = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-1 bg-success/20 text-success px-3 py-1.5 rounded-full">
-          <DollarSign className="w-4 h-4" />
-          <span className="font-semibold">R${balance.toFixed(2)}</span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-success/20 text-success px-3 py-1.5 rounded-full">
+            <DollarSign className="w-4 h-4" />
+            <span className="font-semibold">R${balance.toFixed(2)}</span>
+          </div>
+          <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs ${messagesRemaining <= 2 ? 'bg-destructive/20 text-destructive' : 'bg-muted text-muted-foreground'}`}>
+            <span className="font-semibold">{messagesRemaining} msg</span>
+          </div>
         </div>
       </header>
 
@@ -236,6 +266,13 @@ const Chat = () => {
         senderImage={profile.image}
         onClaim={handleClaimGift}
         onClose={() => setShowPixPopup(false)}
+      />
+
+      {/* VIP Payment Popup */}
+      <VipPaymentPopup
+        isOpen={showVipPayment}
+        onClose={() => setShowVipPayment(false)}
+        onPurchase={handleVipPurchase}
       />
     </div>
   );
