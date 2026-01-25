@@ -45,52 +45,52 @@ const PixRewardPopup = ({ isOpen, onContinue }: PixRewardPopupProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
       {/* Audio element */}
       <audio ref={audioRef} src="/audios/audio-cash.mp3" preload="auto" />
 
       <div className="popup-box relative w-full max-w-sm bg-gradient-to-b from-[#1a2634] to-[#0f1419] border border-success/30 rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
         {/* Card Icon */}
-        <div className="flex justify-center pt-6 pb-4">
-          <div className="w-14 h-14 rounded-xl bg-[#2d3748] flex items-center justify-center">
-            <img src={cardIcon} alt="PIX" className="w-8 h-8" />
+        <div className="flex justify-center pt-5 sm:pt-6 pb-3 sm:pb-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-[#2d3748] flex items-center justify-center">
+            <img src={cardIcon} alt="PIX" className="w-7 h-7 sm:w-8 sm:h-8" />
           </div>
         </div>
 
         {/* Title */}
-        <div className="popup-title text-center px-6 pb-4">
-          <h2 className="text-xl font-bold text-white flex items-center justify-center gap-2">
+        <div className="popup-title text-center px-4 sm:px-6 pb-3 sm:pb-4">
+          <h2 className="text-lg sm:text-xl font-bold text-white flex items-center justify-center gap-2">
             <span className="text-success">✅</span> PIX Recebido!
           </h2>
         </div>
 
         {/* Amount */}
-        <div className="text-center pb-4">
-          <div className="text-4xl font-bold text-success">
+        <div className="text-center pb-3 sm:pb-4">
+          <div className="text-3xl sm:text-4xl font-bold text-success">
             R$ {amount}
           </div>
         </div>
 
         {/* Message - with dangerouslySetInnerHTML for styled text */}
-        <div className="text-center px-6 pb-3">
+        <div className="text-center px-4 sm:px-6 pb-2 sm:pb-3">
           <p 
-            className="text-muted-foreground text-sm"
+            className="text-muted-foreground text-xs sm:text-sm"
             dangerouslySetInnerHTML={{ __html: message.main }}
           />
         </div>
 
         {/* Continue hint */}
-        <div className="text-center px-6 pb-6">
-          <p className="text-white text-sm">
+        <div className="text-center px-4 sm:px-6 pb-4 sm:pb-6">
+          <p className="text-white text-xs sm:text-sm">
             {message.hint}
           </p>
         </div>
 
         {/* CTA Button */}
-        <div className="px-6 pb-6">
+        <div className="px-4 sm:px-6 pb-5 sm:pb-6 safe-area-bottom">
           <Button 
             onClick={onContinue}
-            className="popup-btn w-full bg-success hover:bg-success/90 text-white font-bold py-4 text-base rounded-xl shadow-lg transition-all duration-300"
+            className="popup-btn w-full bg-success hover:bg-success/90 text-white font-bold py-4 text-sm sm:text-base rounded-xl shadow-lg transition-all duration-300 active:scale-95"
           >
             CONTINUAR CURTINDO
           </Button>
