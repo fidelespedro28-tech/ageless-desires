@@ -7,15 +7,32 @@ interface PixRewardPopupProps {
   onContinue: () => void;
 }
 
+// Array de mensagens de incentivo variadas
+const incentiveMessages = [
+  { main: "As coroas <span class='text-primary font-semibold'>AMAM</span> receber curtidas e pagam por isso!", hint: "❤️ Continue curtindo para receber mais!" },
+  { main: "Ela ficou <span class='text-primary font-semibold'>ENCANTADA</span> com sua curtida e te recompensou!", hint: "💰 Quanto mais curtidas, mais PIX você ganha!" },
+  { main: "Mulheres maduras <span class='text-primary font-semibold'>ADORAM</span> atenção e pagam bem por isso!", hint: "🔥 Continue conquistando coroas!" },
+  { main: "Sua curtida foi <span class='text-primary font-semibold'>MUITO ESPECIAL</span> pra ela!", hint: "💸 Ganhe mais recompensas agora!" },
+  { main: "As coroas são <span class='text-primary font-semibold'>GENEROSAS</span> com quem as valoriza!", hint: "✨ Mais curtidas = Mais dinheiro!" },
+  { main: "Ela <span class='text-primary font-semibold'>AMOU</span> seu interesse e quis te agradecer!", hint: "💝 Não pare agora, tem mais PIX te esperando!" },
+  { main: "Coroas ricas <span class='text-primary font-semibold'>RECOMPENSAM</span> quem dá atenção!", hint: "🎁 Sua próxima curtida pode valer mais!" },
+  { main: "Você fez ela se sentir <span class='text-primary font-semibold'>DESEJADA</span>! Parabéns!", hint: "💕 Continue e acumule mais recompensas!" },
+];
+
 const PixRewardPopup = ({ isOpen, onContinue }: PixRewardPopupProps) => {
   const [amount, setAmount] = useState("0,00");
+  const [message, setMessage] = useState(incentiveMessages[0]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      // Generate random value between R$ 4,00 and R$ 9,90
-      const randomValue = (Math.random() * (9.90 - 4.00) + 4.00).toFixed(2);
+      // Generate random value between R$ 4,00 and R$ 9,00
+      const randomValue = (Math.random() * (9.00 - 4.00) + 4.00).toFixed(2);
       setAmount(randomValue.replace(".", ","));
+
+      // Select random message
+      const randomMessage = incentiveMessages[Math.floor(Math.random() * incentiveMessages.length)];
+      setMessage(randomMessage);
 
       // Play cash sound
       if (audioRef.current) {
@@ -54,17 +71,18 @@ const PixRewardPopup = ({ isOpen, onContinue }: PixRewardPopupProps) => {
           </div>
         </div>
 
-        {/* Message */}
+        {/* Message - with dangerouslySetInnerHTML for styled text */}
         <div className="text-center px-6 pb-3">
-          <p className="text-muted-foreground text-sm">
-            As coroas <span className="text-primary font-semibold">AMAM</span> receber curtidas e pagam por isso!
-          </p>
+          <p 
+            className="text-muted-foreground text-sm"
+            dangerouslySetInnerHTML={{ __html: message.main }}
+          />
         </div>
 
         {/* Continue hint */}
         <div className="text-center px-6 pb-6">
-          <p className="text-white text-sm flex items-center justify-center gap-1">
-            <span className="text-primary">❤️</span> Continue curtindo para receber mais!
+          <p className="text-white text-sm">
+            {message.hint}
           </p>
         </div>
 

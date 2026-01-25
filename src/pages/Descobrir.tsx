@@ -13,6 +13,10 @@ import helenaImg from "@/assets/models/helena.jpg";
 import julianaImg from "@/assets/models/juliana.jpg";
 import fernandaImg from "@/assets/models/fernanda.jpg";
 import patriciaImg from "@/assets/models/patricia.jpg";
+import carolinaImg from "@/assets/models/carolina.jpg";
+import adrianaImg from "@/assets/models/adriana.jpg";
+import renataImg from "@/assets/models/renata.png";
+import camilaImg from "@/assets/models/camila.png";
 
 interface Profile {
   id: number;
@@ -64,6 +68,46 @@ const profiles: Profile[] = [
     description: "Divorciada e livre. Quero aproveitar a vida com alguém especial. Adoro mimar meus matches.",
     interests: ["Spa", "Shopping", "Jazz"],
     image: patriciaImg,
+    isVip: true
+  },
+  {
+    id: 5,
+    name: "Carolina",
+    age: 36,
+    location: "a 2km de você",
+    description: "Adoro dias de sol na piscina e homens atenciosos. Recompenso muito bem quem me faz sorrir 😘",
+    interests: ["Praia", "Fitness", "Viagens"],
+    image: carolinaImg,
+    isVip: true
+  },
+  {
+    id: 6,
+    name: "Adriana",
+    age: 34,
+    location: "a 6km de você",
+    description: "Amo natureza e vida saudável. Procuro alguém jovem e cheio de energia para me acompanhar.",
+    interests: ["Yoga", "Trilhas", "Saúde"],
+    image: adrianaImg,
+    isVip: false
+  },
+  {
+    id: 7,
+    name: "Renata",
+    age: 32,
+    location: "a 4km de você",
+    description: "Executiva bem-sucedida. Gosto de praias paradisíacas e homens que sabem tratar uma mulher.",
+    interests: ["Luxo", "Viagens", "Gastronomia"],
+    image: renataImg,
+    isVip: true
+  },
+  {
+    id: 8,
+    name: "Camila",
+    age: 37,
+    location: "a 1km de você",
+    description: "Elegante e misteriosa. Adoro mimar quem me conquista. Você pode ser o próximo sortudo.",
+    interests: ["Moda", "Arte", "Vinhos"],
+    image: camilaImg,
     isVip: true
   }
 ];
