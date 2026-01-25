@@ -4,6 +4,7 @@ import BackgroundGrid from "@/components/BackgroundGrid";
 import ProfileCard from "@/components/ProfileCard";
 import MatchPopup from "@/components/MatchPopup";
 import VipPaymentPopup from "@/components/VipPaymentPopup";
+import PixRewardPopup from "@/components/PixRewardPopup";
 import { Heart, X, Crown, DollarSign, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -78,6 +79,8 @@ const Descobrir = () => {
   const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showVipPayment, setShowVipPayment] = useState(false);
+  const [showPixReward, setShowPixReward] = useState(false);
+  const [pendingReward, setPendingReward] = useState(0);
   const [likesRemaining, setLikesRemaining] = useState(6);
   const [dislikesRemaining, setDislikesRemaining] = useState(3);
 
@@ -108,22 +111,29 @@ const Descobrir = () => {
     setLikes(newLikes);
     setLikesRemaining((prev) => Math.max(0, prev - 1));
     
-    // Random reward
-    if (Math.random() > 0.3) {
-      const reward = Math.floor(Math.random() * 10) + 2;
-      setBalance((prev) => prev + reward);
-      toast.success(`💰 Você ganhou R$${reward.toFixed(2)} por curtir!`, {
-        description: `${currentProfile.name} gostou de você!`,
-      });
-    }
+    // Generate random reward between R$ 4,00 and R$ 9,90
+    const reward = parseFloat((Math.random() * (9.90 - 4.00) + 4.00).toFixed(2));
+    setPendingReward(reward);
+    setBalance((prev) => prev + reward);
+    
+    // Show PIX reward popup
+    setShowPixReward(true);
 
     // Check for match (every 3 likes)
     if (newLikes % 3 === 0) {
       setMatchedProfile(currentProfile);
-      setShowMatch(true);
     }
 
     setCurrentIndex((prev) => prev + 1);
+  };
+  
+  const handlePixRewardContinue = () => {
+    setShowPixReward(false);
+    
+    // If there's a pending match, show it after closing PIX popup
+    if (matchedProfile && likes % 3 === 0) {
+      setTimeout(() => setShowMatch(true), 300);
+    }
   };
 
   const handleDislike = () => {
@@ -238,6 +248,12 @@ const Descobrir = () => {
         isOpen={showVipPayment}
         onClose={() => setShowVipPayment(false)}
         onPurchase={handleVipPurchase}
+      />
+
+      {/* PIX Reward Popup */}
+      <PixRewardPopup
+        isOpen={showPixReward}
+        onContinue={handlePixRewardContinue}
       />
     </div>
   );
