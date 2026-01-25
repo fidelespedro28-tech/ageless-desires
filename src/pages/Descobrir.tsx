@@ -217,32 +217,32 @@ const Descobrir = () => {
     <div className="min-h-screen relative overflow-hidden">
       <BackgroundGrid />
 
-      {/* Header */}
-      <header className="relative z-20 flex items-center justify-between p-4 bg-card/80 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-            <User className="w-5 h-5 text-primary-foreground" />
+      {/* Header - Mobile optimized */}
+      <header className="relative z-20 flex items-center justify-between p-3 sm:p-4 bg-card/80 backdrop-blur-sm border-b border-border safe-area-top">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+            <User className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
           </div>
-          <span className="font-medium text-foreground">{userName}</span>
+          <span className="font-medium text-foreground text-sm sm:text-base truncate max-w-[80px] sm:max-w-none">{userName}</span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Balance */}
-          <div className="flex items-center gap-1 bg-success/20 text-success px-3 py-1.5 rounded-full">
-            <DollarSign className="w-4 h-4" />
-            <span className="font-semibold">R${balance.toFixed(2)}</span>
+          <div className="flex items-center gap-1 bg-success/20 text-success px-2 sm:px-3 py-1 sm:py-1.5 rounded-full">
+            <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="font-semibold text-xs sm:text-base">R${balance.toFixed(2)}</span>
           </div>
 
           {/* Stats with remaining */}
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
             <div className="flex items-center gap-1">
-              <Heart className="w-4 h-4 text-primary fill-primary" />
+              <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-primary fill-primary" />
               <span className={`font-semibold ${likesRemaining <= 2 ? 'text-destructive' : 'text-foreground'}`}>
                 {likesRemaining}
               </span>
             </div>
             <div className="flex items-center gap-1">
-              <X className="w-4 h-4 text-muted-foreground" />
+              <X className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
               <span className={`font-semibold ${dislikesRemaining <= 1 ? 'text-destructive' : 'text-foreground'}`}>
                 {dislikesRemaining}
               </span>
@@ -251,8 +251,8 @@ const Descobrir = () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="relative z-10 flex items-center justify-center min-h-[calc(100vh-80px)] p-4">
+      {/* Main Content - Better vertical centering on mobile */}
+      <main className="relative z-10 flex items-center justify-center min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-80px)] p-3 sm:p-4 pb-16 sm:pb-4">
         <ProfileCard
           key={currentProfile.id}
           name={currentProfile.name}
@@ -267,9 +267,9 @@ const Descobrir = () => {
         />
       </main>
 
-      {/* Bottom hint */}
-      <div className="fixed bottom-4 left-0 right-0 z-20 text-center">
-        <p className="text-xs text-muted-foreground">
+      {/* Bottom hint - Safe area */}
+      <div className="fixed bottom-2 sm:bottom-4 left-0 right-0 z-20 text-center safe-area-bottom">
+        <p className="text-[10px] sm:text-xs text-muted-foreground px-4">
           💡 Curta para ganhar recompensas e encontrar seu match!
         </p>
       </div>

@@ -156,44 +156,45 @@ const Chat = () => {
     <div className="min-h-screen relative overflow-hidden flex flex-col">
       <BackgroundGrid />
 
-      {/* Header */}
-      <header className="relative z-20 flex items-center gap-3 p-4 bg-card/80 backdrop-blur-sm border-b border-border">
+      {/* Header - Mobile optimized */}
+      <header className="relative z-20 flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-card/80 backdrop-blur-sm border-b border-border safe-area-top">
         <button
           onClick={() => navigate("/descobrir")}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
+          className="p-2 rounded-lg hover:bg-muted transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+          aria-label="Voltar"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-3 flex-1">
-          <div className="relative">
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary">
+        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+          <div className="relative shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-primary">
               <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
             </div>
-            <span className="absolute bottom-0 right-0 w-3 h-3 badge-online border-2 border-card" />
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 badge-online border-2 border-card" />
           </div>
-          <div>
-            <p className="font-semibold text-foreground">{profile.name}</p>
-            <p className="text-xs text-success">Online agora</p>
+          <div className="min-w-0">
+            <p className="font-semibold text-foreground text-sm sm:text-base truncate">{profile.name}</p>
+            <p className="text-[10px] sm:text-xs text-success">Online agora</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-success/20 text-success px-3 py-1.5 rounded-full">
-            <DollarSign className="w-4 h-4" />
-            <span className="font-semibold">R${balance.toFixed(2)}</span>
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-1 bg-success/20 text-success px-2 sm:px-3 py-1 sm:py-1.5 rounded-full">
+            <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="font-semibold text-xs sm:text-sm">R${balance.toFixed(2)}</span>
           </div>
-          <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs ${messagesRemaining <= 2 ? 'bg-destructive/20 text-destructive' : 'bg-muted text-muted-foreground'}`}>
+          <div className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs ${messagesRemaining <= 2 ? 'bg-destructive/20 text-destructive' : 'bg-muted text-muted-foreground'}`}>
             <span className="font-semibold">{messagesRemaining} msg</span>
           </div>
         </div>
       </header>
 
       {/* Messages */}
-      <main className="relative z-10 flex-1 overflow-y-auto p-4">
+      <main className="relative z-10 flex-1 overflow-y-auto p-3 sm:p-4">
         {/* Today indicator */}
-        <div className="flex justify-center mb-4">
-          <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
+        <div className="flex justify-center mb-3 sm:mb-4">
+          <span className="text-[10px] sm:text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
             Hoje
           </span>
         </div>
@@ -212,14 +213,14 @@ const Chat = () => {
 
         {isTyping && (
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-full overflow-hidden">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden shrink-0">
               <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
             </div>
-            <div className="bg-card border border-border rounded-2xl px-4 py-3 rounded-bl-sm">
+            <div className="bg-card border border-border rounded-2xl px-3 sm:px-4 py-2 sm:py-3 rounded-bl-sm">
               <div className="flex gap-1">
-                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
             </div>
           </div>
@@ -228,22 +229,22 @@ const Chat = () => {
         <div ref={messagesEndRef} />
       </main>
 
-      {/* Input */}
-      <div className="relative z-20 p-4 bg-card/80 backdrop-blur-sm border-t border-border">
+      {/* Input - Safe area for notched devices */}
+      <div className="relative z-20 p-3 sm:p-4 bg-card/80 backdrop-blur-sm border-t border-border safe-area-bottom">
         <div className="flex items-center gap-2">
           <Input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Mensagem..."
-            className="flex-1"
+            className="flex-1 text-base"
           />
           {inputValue.trim() ? (
-            <Button onClick={sendMessage} size="icon" variant="hero">
+            <Button onClick={sendMessage} size="icon" variant="hero" className="shrink-0 min-w-[44px] min-h-[44px]">
               <Send className="w-5 h-5" />
             </Button>
           ) : (
-            <Button size="icon" variant="ghost">
+            <Button size="icon" variant="ghost" className="shrink-0 min-w-[44px] min-h-[44px]">
               <Mic className="w-5 h-5" />
             </Button>
           )}

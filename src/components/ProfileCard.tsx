@@ -25,12 +25,13 @@ const ProfileCard = ({
   onDislike,
 }: ProfileCardProps) => {
   return (
-    <div className="relative w-full max-w-sm mx-auto aspect-[3/4] rounded-2xl overflow-hidden shadow-card group">
+    <div className="relative w-full max-w-[340px] sm:max-w-sm mx-auto aspect-[3/4] rounded-2xl overflow-hidden shadow-card group">
       {/* Background Image */}
       <img
         src={image}
         alt={name}
         className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        loading="lazy"
       />
       
       {/* Gradient Overlay */}
@@ -38,54 +39,54 @@ const ProfileCard = ({
 
       {/* VIP Badge */}
       {isVip && (
-        <div className="absolute top-4 right-4 badge-vip">
+        <div className="absolute top-3 sm:top-4 right-3 sm:right-4 badge-vip">
           <Crown className="w-3 h-3" />
           VIP
         </div>
       )}
 
       {/* Online indicator */}
-      <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full">
+      <div className="absolute top-3 sm:top-4 left-3 sm:left-4 flex items-center gap-2 bg-black/50 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-1.5 rounded-full">
         <span className="badge-online" />
         <span className="text-xs text-foreground">Online agora</span>
       </div>
 
       {/* Profile Info */}
-      <div className="absolute bottom-0 left-0 right-0 p-6">
-        <div className="mb-4">
-          <h2 className="font-display text-2xl font-bold text-foreground mb-1">
+      <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
+        <div className="mb-3 sm:mb-4">
+          <h2 className="font-display text-xl sm:text-2xl font-bold text-foreground mb-1">
             {name}, <span className="text-primary">{age}</span>
           </h2>
           
-          <div className="flex items-center gap-1 text-muted-foreground text-sm mb-3">
-            <MapPin className="w-4 h-4" />
+          <div className="flex items-center gap-1 text-muted-foreground text-xs sm:text-sm mb-2 sm:mb-3">
+            <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
             <span>{location}</span>
           </div>
 
           {/* Interests */}
-          <div className="flex flex-wrap gap-2 mb-3">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
             {interests.slice(0, 3).map((interest, index) => (
               <span 
                 key={index}
-                className="px-3 py-1 bg-primary/20 text-primary text-xs rounded-full border border-primary/30"
+                className="px-2 sm:px-3 py-0.5 sm:py-1 bg-primary/20 text-primary text-xs rounded-full border border-primary/30"
               >
                 {interest}
               </span>
             ))}
           </div>
 
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
             {description}
           </p>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-center gap-6">
+        {/* Action Buttons - Larger touch targets */}
+        <div className="flex justify-center gap-4 sm:gap-6">
           <Button
             onClick={onDislike}
             size="icon"
             variant="glass"
-            className="w-14 h-14 rounded-full border-destructive/50 hover:border-destructive hover:bg-destructive/20"
+            className="w-14 h-14 sm:w-14 sm:h-14 rounded-full border-destructive/50 hover:border-destructive hover:bg-destructive/20 active:scale-95 transition-transform"
           >
             <X className="w-6 h-6 text-destructive" />
           </Button>
@@ -94,7 +95,7 @@ const ProfileCard = ({
             onClick={onLike}
             size="icon"
             variant="hero"
-            className="w-14 h-14 rounded-full"
+            className="w-14 h-14 sm:w-14 sm:h-14 rounded-full active:scale-95 transition-transform"
           >
             <Heart className="w-6 h-6 fill-current" />
           </Button>
