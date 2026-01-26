@@ -4,7 +4,7 @@ import BackgroundGrid from "@/components/BackgroundGrid";
 import ChatMessage from "@/components/ChatMessage";
 import GiftNotification from "@/components/GiftNotification";
 import PixPopup from "@/components/PixPopup";
-import VipPaymentPopup from "@/components/VipPaymentPopup";
+import VipPlansPopup from "@/components/VipPlansPopup";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, Mic, DollarSign, Crown } from "lucide-react";
@@ -31,6 +31,8 @@ const modelResponses = [
   "Hmm, gostei de você! Vou te enviar um presentinho 💕"
 ];
 
+const MAX_MESSAGES = 4;
+
 const Chat = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -45,10 +47,13 @@ const Chat = () => {
   const [balance, setBalance] = useState(0);
   const [showGiftNotification, setShowGiftNotification] = useState(false);
   const [showPixPopup, setShowPixPopup] = useState(false);
-  const [showVipPayment, setShowVipPayment] = useState(false);
+  const [showVipPlans, setShowVipPlans] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [messagesRemaining, setMessagesRemaining] = useState(5);
+  const [messagesUsed, setMessagesUsed] = useState(0);
+  const [isVip, setIsVip] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const messagesRemaining = isVip ? 999 : MAX_MESSAGES - messagesUsed;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -80,8 +85,8 @@ const Chat = () => {
   const sendMessage = () => {
     if (!inputValue.trim()) return;
 
-    if (messagesRemaining <= 0) {
-      setShowVipPayment(true);
+    if (!isVip && messagesUsed >= MAX_MESSAGES) {
+      setShowVipPlans(true);
       return;
     }
 
@@ -94,12 +99,12 @@ const Chat = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
-    setMessagesRemaining((prev) => Math.max(0, prev - 1));
+    setMessagesUsed((prev) => prev + 1);
 
     // Show VIP popup when messages run out
-    if (messagesRemaining <= 1) {
+    if (!isVip && messagesUsed + 1 >= MAX_MESSAGES) {
       setTimeout(() => {
-        setShowVipPayment(true);
+        setShowVipPlans(true);
       }, 3000);
     }
 
@@ -119,11 +124,11 @@ const Chat = () => {
     }, 2000 + Math.random() * 2000);
   };
 
-  const handleVipPurchase = () => {
-    setShowVipPayment(false);
-    setMessagesRemaining(999);
+  const handleVipPurchase = (plan: string) => {
+    setShowVipPlans(false);
+    setIsVip(true);
     toast.success("🎉 VIP Ativado!", {
-      description: "Mensagens ilimitadas desbloqueadas!"
+      description: `Plano ${plan.charAt(0).toUpperCase() + plan.slice(1)} - Mensagens ilimitadas!`
     });
   };
 
@@ -151,6 +156,8 @@ const Chat = () => {
     };
     setMessages((prev) => [...prev, giftMessage]);
   };
+
+  const isInputDisabled = !isVip && messagesUsed >= MAX_MESSAGES;
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col">
@@ -180,13 +187,20 @@ const Chat = () => {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {isVip && (
+            <span className="bg-gradient-to-r from-gold to-amber-500 text-background text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+              <Crown className="w-3 h-3" /> VIP
+            </span>
+          )}
           <div className="flex items-center gap-1 bg-success/20 text-success px-2 sm:px-3 py-1 sm:py-1.5 rounded-full">
             <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
             <span className="font-semibold text-xs sm:text-sm">R${balance.toFixed(2)}</span>
           </div>
-          <div className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs ${messagesRemaining <= 2 ? 'bg-destructive/20 text-destructive' : 'bg-muted text-muted-foreground'}`}>
-            <span className="font-semibold">{messagesRemaining} msg</span>
-          </div>
+          {!isVip && (
+            <div className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs ${messagesRemaining <= 2 ? 'bg-destructive/20 text-destructive' : 'bg-muted text-muted-foreground'}`}>
+              <span className="font-semibold">{messagesRemaining} msg</span>
+            </div>
+          )}
         </div>
       </header>
 
@@ -229,6 +243,21 @@ const Chat = () => {
         <div ref={messagesEndRef} />
       </main>
 
+      {/* Limit reached banner */}
+      {isInputDisabled && (
+        <div className="relative z-20 px-4 py-3 bg-gradient-to-r from-primary/20 to-purple-accent/20 border-t border-primary/30">
+          <p className="text-center text-white text-sm">
+            💬 Você atingiu o limite de {MAX_MESSAGES} mensagens!{" "}
+            <button 
+              onClick={() => setShowVipPlans(true)}
+              className="text-primary font-semibold underline hover:text-primary/80"
+            >
+              Seja VIP para continuar
+            </button>
+          </p>
+        </div>
+      )}
+
       {/* Input - Safe area for notched devices */}
       <div className="relative z-20 p-3 sm:p-4 bg-card/80 backdrop-blur-sm border-t border-border safe-area-bottom">
         <div className="flex items-center gap-2">
@@ -236,15 +265,27 @@ const Chat = () => {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Mensagem..."
+            placeholder={isInputDisabled ? "Limite atingido - Seja VIP!" : "Mensagem..."}
             className="flex-1 text-base"
+            disabled={isInputDisabled}
           />
           {inputValue.trim() ? (
-            <Button onClick={sendMessage} size="icon" variant="hero" className="shrink-0 min-w-[44px] min-h-[44px]">
+            <Button 
+              onClick={sendMessage} 
+              size="icon" 
+              variant="hero" 
+              className="shrink-0 min-w-[44px] min-h-[44px]"
+              disabled={isInputDisabled}
+            >
               <Send className="w-5 h-5" />
             </Button>
           ) : (
-            <Button size="icon" variant="ghost" className="shrink-0 min-w-[44px] min-h-[44px]">
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="shrink-0 min-w-[44px] min-h-[44px]"
+              disabled={isInputDisabled}
+            >
               <Mic className="w-5 h-5" />
             </Button>
           )}
@@ -269,11 +310,13 @@ const Chat = () => {
         onClose={() => setShowPixPopup(false)}
       />
 
-      {/* VIP Payment Popup */}
-      <VipPaymentPopup
-        isOpen={showVipPayment}
-        onClose={() => setShowVipPayment(false)}
+      {/* VIP Plans Popup */}
+      <VipPlansPopup
+        isOpen={showVipPlans}
+        onClose={() => setShowVipPlans(false)}
         onPurchase={handleVipPurchase}
+        limitType="messages"
+        currentMessages={messagesUsed}
       />
     </div>
   );
