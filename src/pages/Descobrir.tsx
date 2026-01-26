@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import BackgroundGrid from "@/components/BackgroundGrid";
 import ProfileCard from "@/components/ProfileCard";
 import MatchPopup from "@/components/MatchPopup";
-import VipPaymentPopup from "@/components/VipPaymentPopup";
+import VipPlansPopup from "@/components/VipPlansPopup";
 import PixRewardPopup from "@/components/PixRewardPopup";
 import { Heart, X, Crown, DollarSign, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -112,6 +112,9 @@ const profiles: Profile[] = [
   }
 ];
 
+const MAX_LIKES = 6;
+const MAX_DISLIKES = 3;
+
 const Descobrir = () => {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -122,38 +125,29 @@ const Descobrir = () => {
   const [showMatch, setShowMatch] = useState(false);
   const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showVipPayment, setShowVipPayment] = useState(false);
+  const [showVipPlans, setShowVipPlans] = useState(false);
   const [showPixReward, setShowPixReward] = useState(false);
   const [pendingReward, setPendingReward] = useState(0);
-  const [likesRemaining, setLikesRemaining] = useState(6);
-  const [dislikesRemaining, setDislikesRemaining] = useState(3);
+  const [isVip, setIsVip] = useState(false);
+
+  const likesRemaining = isVip ? 999 : MAX_LIKES - likes;
+  const dislikesRemaining = isVip ? 999 : MAX_DISLIKES - dislikes;
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
-  // Check if limits reached and show VIP popup
-  useEffect(() => {
-    if (likesRemaining <= 0 && dislikesRemaining <= 0) {
-      const timer = setTimeout(() => {
-        setShowVipPayment(true);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [likesRemaining, dislikesRemaining]);
-
   const currentProfile = profiles[currentIndex % profiles.length];
 
   const handleLike = () => {
-    if (likesRemaining <= 0) {
-      setShowVipPayment(true);
+    if (!isVip && likes >= MAX_LIKES) {
+      setShowVipPlans(true);
       return;
     }
 
     const newLikes = likes + 1;
     setLikes(newLikes);
-    setLikesRemaining((prev) => Math.max(0, prev - 1));
     
     // Generate random reward between R$ 4,00 and R$ 9,90
     const reward = parseFloat((Math.random() * (9.90 - 4.00) + 4.00).toFixed(2));
@@ -169,6 +163,13 @@ const Descobrir = () => {
     }
 
     setCurrentIndex((prev) => prev + 1);
+
+    // Show VIP popup when limit reached
+    if (!isVip && newLikes >= MAX_LIKES) {
+      setTimeout(() => {
+        setShowVipPlans(true);
+      }, 1500);
+    }
   };
   
   const handlePixRewardContinue = () => {
@@ -181,22 +182,27 @@ const Descobrir = () => {
   };
 
   const handleDislike = () => {
-    if (dislikesRemaining <= 0) {
-      setShowVipPayment(true);
+    if (!isVip && dislikes >= MAX_DISLIKES) {
+      setShowVipPlans(true);
       return;
     }
 
     setDislikes((prev) => prev + 1);
-    setDislikesRemaining((prev) => Math.max(0, prev - 1));
     setCurrentIndex((prev) => prev + 1);
+
+    // Show VIP popup when limit reached
+    if (!isVip && dislikes + 1 >= MAX_DISLIKES) {
+      setTimeout(() => {
+        setShowVipPlans(true);
+      }, 500);
+    }
   };
 
-  const handleVipPurchase = () => {
-    setShowVipPayment(false);
-    setLikesRemaining(999);
-    setDislikesRemaining(999);
+  const handleVipPurchase = (plan: string) => {
+    setShowVipPlans(false);
+    setIsVip(true);
     toast.success("🎉 VIP Ativado!", {
-      description: "Agora você tem acesso ilimitado!"
+      description: `Plano ${plan.charAt(0).toUpperCase() + plan.slice(1)} ativado com sucesso!`
     });
   };
 
@@ -224,6 +230,11 @@ const Descobrir = () => {
             <User className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
           </div>
           <span className="font-medium text-foreground text-sm sm:text-base truncate max-w-[80px] sm:max-w-none">{userName}</span>
+          {isVip && (
+            <span className="bg-gradient-to-r from-gold to-amber-500 text-background text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+              <Crown className="w-3 h-3" /> VIP
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
@@ -234,20 +245,22 @@ const Descobrir = () => {
           </div>
 
           {/* Stats with remaining */}
-          <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-            <div className="flex items-center gap-1">
-              <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-primary fill-primary" />
-              <span className={`font-semibold ${likesRemaining <= 2 ? 'text-destructive' : 'text-foreground'}`}>
-                {likesRemaining}
-              </span>
+          {!isVip && (
+            <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
+              <div className="flex items-center gap-1">
+                <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-primary fill-primary" />
+                <span className={`font-semibold ${likesRemaining <= 2 ? 'text-destructive' : 'text-foreground'}`}>
+                  {likesRemaining}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <X className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                <span className={`font-semibold ${dislikesRemaining <= 1 ? 'text-destructive' : 'text-foreground'}`}>
+                  {dislikesRemaining}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <X className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
-              <span className={`font-semibold ${dislikesRemaining <= 1 ? 'text-destructive' : 'text-foreground'}`}>
-                {dislikesRemaining}
-              </span>
-            </div>
-          </div>
+          )}
         </div>
       </header>
 
@@ -287,11 +300,13 @@ const Descobrir = () => {
         onClose={() => setShowMatch(false)}
       />
 
-      {/* VIP Payment Popup */}
-      <VipPaymentPopup
-        isOpen={showVipPayment}
-        onClose={() => setShowVipPayment(false)}
+      {/* VIP Plans Popup */}
+      <VipPlansPopup
+        isOpen={showVipPlans}
+        onClose={() => setShowVipPlans(false)}
         onPurchase={handleVipPurchase}
+        limitType="likes"
+        currentLikes={likes}
       />
 
       {/* PIX Reward Popup */}
