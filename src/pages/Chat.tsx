@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import BackgroundGrid from "@/components/BackgroundGrid";
 import ChatMessage from "@/components/ChatMessage";
+import AudioMessage from "@/components/AudioMessage";
 import GiftNotification from "@/components/GiftNotification";
 import PixPopup from "@/components/PixPopup";
 import VipPlansPopup from "@/components/VipPlansPopup";
@@ -18,8 +19,13 @@ interface Message {
   isUser: boolean;
   timestamp: string;
   isAudio?: boolean;
-  audioDuration?: string;
+  audioSrc?: string;
 }
+
+// Áudios disponíveis das coroas
+const audioFiles = ["/audios/audio1.mp3", "/audios/audio2.mp3"];
+
+const getRandomAudio = () => audioFiles[Math.floor(Math.random() * audioFiles.length)];
 
 const modelResponses = [
   "Oi amor! Que bom te conhecer aqui 💋",
@@ -29,6 +35,13 @@ const modelResponses = [
   "Que tal a gente se conhecer melhor? Estou online agora...",
   "Você me deixou curiosa... O que você está procurando aqui?",
   "Hmm, gostei de você! Vou te enviar um presentinho 💕"
+];
+
+// Mensagens de áudio que a coroa pode enviar
+const audioMessages = [
+  "Hmm... que voz gostosa que você deve ter 🎧",
+  "Adorei receber sua mensagem... escuta o que eu tenho pra te dizer 💋",
+  "Ei gatinho... escuta isso aqui com atenção 😏",
 ];
 
 const MAX_MESSAGES = 4;
@@ -64,20 +77,33 @@ const Chat = () => {
   }, [messages]);
 
   useEffect(() => {
-    // Initial message from model
+    // Initial text message from model
     setTimeout(() => {
       setMessages([{
         id: 1,
-        content: `Oi! Vi que você curtiu meu perfil 💋 Sou a ${profile.name}, prazer em te conhecer aqui!`,
+        content: `Oi gatinho! 💋 Vi que você curtiu meu perfil... Sou a ${profile.name}, prazer em te conhecer aqui! ❤️`,
         isUser: false,
         timestamp: "Agora"
       }]);
-    }, 1500);
+    }, 1000);
+
+    // Send audio message after initial text
+    setTimeout(() => {
+      const audioMessage: Message = {
+        id: 2,
+        content: "Escuta essa mensagem que eu gravei especialmente pra você... 🎧💕",
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        isAudio: true,
+        audioSrc: getRandomAudio(),
+      };
+      setMessages((prev) => [...prev, audioMessage]);
+    }, 3500);
 
     // Show gift notification after some time
     const giftTimer = setTimeout(() => {
       setShowGiftNotification(true);
-    }, 15000);
+    }, 20000);
 
     return () => clearTimeout(giftTimer);
   }, [profile.name]);
@@ -113,14 +139,31 @@ const Chat = () => {
     
     setTimeout(() => {
       setIsTyping(false);
-      const randomResponse = modelResponses[Math.floor(Math.random() * modelResponses.length)];
-      const modelMessage: Message = {
-        id: messages.length + 2,
-        content: randomResponse,
-        isUser: false,
-        timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages((prev) => [...prev, modelMessage]);
+      
+      // 30% chance to send audio message instead of text
+      const sendAudio = Math.random() < 0.3;
+      
+      if (sendAudio) {
+        const randomAudioText = audioMessages[Math.floor(Math.random() * audioMessages.length)];
+        const audioMessage: Message = {
+          id: messages.length + 2,
+          content: randomAudioText,
+          isUser: false,
+          timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          isAudio: true,
+          audioSrc: getRandomAudio(),
+        };
+        setMessages((prev) => [...prev, audioMessage]);
+      } else {
+        const randomResponse = modelResponses[Math.floor(Math.random() * modelResponses.length)];
+        const modelMessage: Message = {
+          id: messages.length + 2,
+          content: randomResponse,
+          isUser: false,
+          timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages((prev) => [...prev, modelMessage]);
+      }
     }, 2000 + Math.random() * 2000);
   };
 
@@ -214,15 +257,24 @@ const Chat = () => {
         </div>
 
         {messages.map((message) => (
-          <ChatMessage
-            key={message.id}
-            content={message.content}
-            isUser={message.isUser}
-            timestamp={message.timestamp}
-            isAudio={message.isAudio}
-            audioDuration={message.audioDuration}
-            senderImage={!message.isUser ? profile.image : undefined}
-          />
+          message.isAudio && message.audioSrc ? (
+            <AudioMessage
+              key={message.id}
+              audioSrc={message.audioSrc}
+              senderImage={profile.image}
+              senderName={profile.name}
+              timestamp={message.timestamp}
+              autoPlay={message.id === 2}
+            />
+          ) : (
+            <ChatMessage
+              key={message.id}
+              content={message.content}
+              isUser={message.isUser}
+              timestamp={message.timestamp}
+              senderImage={!message.isUser ? profile.image : undefined}
+            />
+          )
         ))}
 
         {isTyping && (
