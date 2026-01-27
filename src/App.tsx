@@ -7,6 +7,7 @@ import FacebookPixel from "./components/FacebookPixel";
 import Index from "./pages/Index";
 import Cadastro from "./pages/Cadastro";
 import Login from "./pages/Login";
+import Perfil from "./pages/Perfil";
 import BemVindo from "./pages/BemVindo";
 import Descobrir from "./pages/Descobrir";
 import Chat from "./pages/Chat";
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/perfil" element={<Perfil />} />
           <Route path="/bem-vindo" element={<BemVindo />} />
           <Route path="/descobrir" element={<Descobrir />} />
           <Route path="/chat" element={<Chat />} />

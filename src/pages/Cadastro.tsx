@@ -31,7 +31,8 @@ const Cadastro = () => {
     // Registra o cadastro no LeadTracker e dispara evento Lead
     LeadTracker.registerSignup(formData.nome, formData.email, formData.pix);
     
-    navigate("/bem-vindo");
+    // Redireciona para completar perfil
+    navigate("/perfil");
   };
 
   const benefits = [
