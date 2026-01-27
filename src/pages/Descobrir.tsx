@@ -236,7 +236,7 @@ const Descobrir = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <BackgroundGrid />
+      <BackgroundGrid useImage />
 
       {/* Header - Mobile optimized */}
       <header className="relative z-20 flex items-center justify-between p-3 sm:p-4 bg-card/80 backdrop-blur-sm border-b border-border safe-area-top">

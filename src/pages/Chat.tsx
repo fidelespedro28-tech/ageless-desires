@@ -217,7 +217,7 @@ const Chat = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col">
-      <BackgroundGrid />
+      <BackgroundGrid useImage />
 
       {/* Header - Mobile optimized */}
       <header className="relative z-20 flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-card/80 backdrop-blur-sm border-b border-border safe-area-top">

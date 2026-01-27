@@ -24,7 +24,7 @@ const BemVindo = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <BackgroundGrid />
+        <BackgroundGrid useImage />
         <div className="text-center z-10 animate-fade-in-up">
           <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
           <p className="text-lg text-foreground">Carregando...</p>
@@ -35,7 +35,7 @@ const BemVindo = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <BackgroundGrid />
+      <BackgroundGrid useImage />
 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-md text-center animate-fade-in-up">

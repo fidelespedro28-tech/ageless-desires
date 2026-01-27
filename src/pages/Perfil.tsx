@@ -116,7 +116,7 @@ const Perfil = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <BackgroundGrid />
+      <BackgroundGrid useImage />
 
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Header */}
