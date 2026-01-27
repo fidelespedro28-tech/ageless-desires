@@ -6,6 +6,7 @@ import AudioMessage from "@/components/AudioMessage";
 import GiftNotification from "@/components/GiftNotification";
 import PixPopup from "@/components/PixPopup";
 import VipPlansPopup from "@/components/VipPlansPopup";
+import { LeadTracker } from "@/lib/leadTracker";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, Mic, DollarSign, Crown } from "lucide-react";
@@ -126,6 +127,9 @@ const Chat = () => {
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setMessagesUsed((prev) => prev + 1);
+    
+    // Registra mensagem no tracker
+    LeadTracker.incrementMessages();
 
     // Show VIP popup when messages run out
     if (!isVip && messagesUsed + 1 >= MAX_MESSAGES) {
@@ -170,6 +174,15 @@ const Chat = () => {
   const handleVipPurchase = (plan: string) => {
     setShowVipPlans(false);
     setIsVip(true);
+    
+    // Registra compra no tracker (dispara Purchase)
+    const planValues: Record<string, number> = {
+      essencial: 19.90,
+      premium: 37.90,
+      ultra: 47.90
+    };
+    LeadTracker.registerPurchase(plan, planValues[plan] || 47.90);
+    
     toast.success("🎉 VIP Ativado!", {
       description: `Plano ${plan.charAt(0).toUpperCase() + plan.slice(1)} - Mensagens ilimitadas!`
     });
