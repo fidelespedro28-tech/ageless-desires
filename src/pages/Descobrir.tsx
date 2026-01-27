@@ -5,6 +5,7 @@ import ProfileCard from "@/components/ProfileCard";
 import MatchPopup from "@/components/MatchPopup";
 import VipPlansPopup from "@/components/VipPlansPopup";
 import PixRewardPopup from "@/components/PixRewardPopup";
+import { LeadTracker } from "@/lib/leadTracker";
 import { Heart, X, Crown, DollarSign, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -149,6 +150,9 @@ const Descobrir = () => {
     const newLikes = likes + 1;
     setLikes(newLikes);
     
+    // Registra like no tracker
+    LeadTracker.incrementLikes();
+    
     // Generate random reward between R$ 4,00 and R$ 9,90
     const reward = parseFloat((Math.random() * (9.90 - 4.00) + 4.00).toFixed(2));
     setPendingReward(reward);
@@ -160,6 +164,8 @@ const Descobrir = () => {
     // Check for match (every 3 likes)
     if (newLikes % 3 === 0) {
       setMatchedProfile(currentProfile);
+      // Registra match no tracker (dispara AddToCart)
+      LeadTracker.registerMatch(currentProfile.name);
     }
 
     setCurrentIndex((prev) => prev + 1);
@@ -201,6 +207,15 @@ const Descobrir = () => {
   const handleVipPurchase = (plan: string) => {
     setShowVipPlans(false);
     setIsVip(true);
+    
+    // Registra compra no tracker (dispara Purchase)
+    const planValues: Record<string, number> = {
+      essencial: 19.90,
+      premium: 37.90,
+      ultra: 47.90
+    };
+    LeadTracker.registerPurchase(plan, planValues[plan] || 47.90);
+    
     toast.success("🎉 VIP Ativado!", {
       description: `Plano ${plan.charAt(0).toUpperCase() + plan.slice(1)} ativado com sucesso!`
     });

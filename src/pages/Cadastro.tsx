@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import BackgroundGrid from "@/components/BackgroundGrid";
 import Logo from "@/components/Logo";
+import { LeadTracker } from "@/lib/leadTracker";
 import { ArrowLeft, User, Mail, Key, Eye, EyeOff, Crown, Check } from "lucide-react";
 
 const Cadastro = () => {
@@ -26,6 +27,9 @@ const Cadastro = () => {
     
     // Store user name for personalization
     localStorage.setItem("userName", formData.nome.split(" ")[0]);
+    
+    // Registra o cadastro no LeadTracker e dispara evento Lead
+    LeadTracker.registerSignup(formData.nome, formData.email, formData.pix);
     
     navigate("/bem-vindo");
   };
