@@ -7,7 +7,7 @@ interface VipPlansPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onPurchase: (plan: string) => void;
-  limitType?: "likes" | "messages" | "general";
+  limitType?: "likes" | "messages" | "matches" | "general";
   currentLikes?: number;
   currentMessages?: number;
 }
@@ -66,6 +66,9 @@ const VipPlansPopup = ({
     if (limitType === "messages") {
       return "💬 Limite de Mensagens Atingido!";
     }
+    if (limitType === "matches") {
+      return "💕 Você já usou seu match gratuito!";
+    }
     return "👑 Acesse o Mundo VIP!";
   };
 
@@ -75,6 +78,9 @@ const VipPlansPopup = ({
     }
     if (limitType === "messages") {
       return `Você já enviou ${currentMessages} mensagens! Para continuar conversando sem limites e receber mais PIX, torne-se VIP.`;
+    }
+    if (limitType === "matches") {
+      return "Parabéns pelo seu primeiro match! 🎉 Para ter matches ilimitados e conhecer mais coroas incríveis, torne-se Premium agora.";
     }
     return "Desbloqueie todas as funcionalidades exclusivas e tenha acesso ilimitado às melhores coroas da plataforma.";
   };
