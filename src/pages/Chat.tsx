@@ -7,6 +7,7 @@ import GiftNotification from "@/components/GiftNotification";
 import PixPopup from "@/components/PixPopup";
 import VipPlansPopup from "@/components/VipPlansPopup";
 import { LeadTracker } from "@/lib/leadTracker";
+import { useBalance } from "@/hooks/useBalance";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, Mic, DollarSign, Crown } from "lucide-react";
@@ -56,9 +57,11 @@ const Chat = () => {
     image: julianaImg
   };
 
+  // Persistent balance hook
+  const { balance, addBalance } = useBalance(0);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
-  const [balance, setBalance] = useState(0);
   const [showGiftNotification, setShowGiftNotification] = useState(false);
   const [showPixPopup, setShowPixPopup] = useState(false);
   const [showVipPlans, setShowVipPlans] = useState(false);
@@ -66,8 +69,6 @@ const Chat = () => {
   const [messagesUsed, setMessagesUsed] = useState(0);
   const [isVip, setIsVip] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const messagesRemaining = isVip ? 999 : MAX_MESSAGES - messagesUsed;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -202,7 +203,7 @@ const Chat = () => {
 
   const handleClaimGift = () => {
     setShowPixPopup(false);
-    setBalance((prev) => prev + 50);
+    addBalance(50);
     
     const giftMessage: Message = {
       id: messages.length + 1,
@@ -252,11 +253,6 @@ const Chat = () => {
             <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
             <span className="font-semibold text-xs sm:text-sm">R${balance.toFixed(2)}</span>
           </div>
-          {!isVip && (
-            <div className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs ${messagesRemaining <= 2 ? 'bg-destructive/20 text-destructive' : 'bg-muted text-muted-foreground'}`}>
-              <span className="font-semibold">{messagesRemaining} msg</span>
-            </div>
-          )}
         </div>
       </header>
 
