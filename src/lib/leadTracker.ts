@@ -18,6 +18,9 @@ export interface LeadData {
   likeCount: number;
   msgCount: number;
   
+  // Saldo do usuário (R$)
+  userBalance: number;
+  
   // Timestamps
   entryTime: string;
   matchTime: string | null;
@@ -45,6 +48,7 @@ const createInitialLeadData = (): LeadData => ({
   userPixKey: "",
   likeCount: 0,
   msgCount: 0,
+  userBalance: 0,
   entryTime: new Date().toISOString(),
   matchTime: null,
   purchaseTime: null,
