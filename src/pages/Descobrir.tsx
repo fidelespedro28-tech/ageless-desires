@@ -6,7 +6,8 @@ import MatchPopup from "@/components/MatchPopup";
 import VipPlansPopup from "@/components/VipPlansPopup";
 import PixRewardPopup from "@/components/PixRewardPopup";
 import { LeadTracker } from "@/lib/leadTracker";
-import { Heart, X, Crown, DollarSign, User } from "lucide-react";
+import { useMatchLimit } from "@/hooks/useMatchLimit";
+import { Heart, X, Crown, DollarSign, User, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -113,9 +114,6 @@ const profiles: Profile[] = [
   }
 ];
 
-const MAX_LIKES = 6;
-const MAX_DISLIKES = 3;
-
 const Descobrir = () => {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -129,20 +127,33 @@ const Descobrir = () => {
   const [showVipPlans, setShowVipPlans] = useState(false);
   const [showPixReward, setShowPixReward] = useState(false);
   const [pendingReward, setPendingReward] = useState(0);
-  const [isVip, setIsVip] = useState(false);
 
-  const likesRemaining = isVip ? 999 : MAX_LIKES - likes;
-  const dislikesRemaining = isVip ? 999 : MAX_DISLIKES - dislikes;
+  // Match limit hook - controls free/premium interactions
+  const { 
+    hasReachedLimit, 
+    isPremium, 
+    canInteract, 
+    registerMatch, 
+    enterPremiumMode 
+  } = useMatchLimit();
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
+  // Show premium popup immediately if user already reached limit (page reload)
+  useEffect(() => {
+    if (hasReachedLimit && !isPremium) {
+      setShowVipPlans(true);
+    }
+  }, [hasReachedLimit, isPremium]);
+
   const currentProfile = profiles[currentIndex % profiles.length];
 
   const handleLike = () => {
-    if (!isVip && likes >= MAX_LIKES) {
+    // Block if limit reached and not premium
+    if (!canInteract) {
       setShowVipPlans(true);
       return;
     }
@@ -161,52 +172,43 @@ const Descobrir = () => {
     // Show PIX reward popup
     setShowPixReward(true);
 
-    // Check for match (every 3 likes)
-    if (newLikes % 3 === 0) {
+    // Match happens on first like for free users, or every 3 likes for premium
+    const shouldMatch = isPremium ? newLikes % 3 === 0 : newLikes === 1;
+    
+    if (shouldMatch) {
       setMatchedProfile(currentProfile);
+      registerMatch(); // Register match in the limit system
       // Registra match no tracker (dispara AddToCart)
       LeadTracker.registerMatch(currentProfile.name);
     }
 
     setCurrentIndex((prev) => prev + 1);
-
-    // Show VIP popup when limit reached
-    if (!isVip && newLikes >= MAX_LIKES) {
-      setTimeout(() => {
-        setShowVipPlans(true);
-      }, 1500);
-    }
   };
   
   const handlePixRewardContinue = () => {
     setShowPixReward(false);
     
-    // If there's a pending match, show it after closing PIX popup
-    if (matchedProfile && likes % 3 === 0) {
+    // Check if there's a pending match
+    const shouldMatch = isPremium ? likes % 3 === 0 : likes === 1;
+    if (matchedProfile && shouldMatch) {
       setTimeout(() => setShowMatch(true), 300);
     }
   };
 
   const handleDislike = () => {
-    if (!isVip && dislikes >= MAX_DISLIKES) {
+    // Block if limit reached and not premium
+    if (!canInteract) {
       setShowVipPlans(true);
       return;
     }
 
     setDislikes((prev) => prev + 1);
     setCurrentIndex((prev) => prev + 1);
-
-    // Show VIP popup when limit reached
-    if (!isVip && dislikes + 1 >= MAX_DISLIKES) {
-      setTimeout(() => {
-        setShowVipPlans(true);
-      }, 500);
-    }
   };
 
   const handleVipPurchase = (plan: string) => {
     setShowVipPlans(false);
-    setIsVip(true);
+    enterPremiumMode(); // Unlock premium mode
     
     // Registra compra no tracker (dispara Purchase)
     const planValues: Record<string, number> = {
@@ -216,9 +218,17 @@ const Descobrir = () => {
     };
     LeadTracker.registerPurchase(plan, planValues[plan] || 47.90);
     
-    toast.success("🎉 VIP Ativado!", {
-      description: `Plano ${plan.charAt(0).toUpperCase() + plan.slice(1)} ativado com sucesso!`
+    toast.success("🎉 Premium Ativado!", {
+      description: `Plano ${plan.charAt(0).toUpperCase() + plan.slice(1)} ativado - Matches ilimitados!`
     });
+  };
+
+  const handleMatchClose = () => {
+    setShowMatch(false);
+    // If free user reached limit, show VIP popup
+    if (hasReachedLimit && !isPremium) {
+      setTimeout(() => setShowVipPlans(true), 300);
+    }
   };
 
   if (isLoading) {
@@ -234,6 +244,67 @@ const Descobrir = () => {
     );
   }
 
+  // Blocked state - show premium upgrade screen
+  if (hasReachedLimit && !isPremium) {
+    return (
+      <div className="min-h-screen relative overflow-hidden">
+        <BackgroundGrid useImage />
+        
+        {/* Header */}
+        <header className="relative z-20 flex items-center justify-between p-3 sm:p-4 bg-card/80 backdrop-blur-sm border-b border-border safe-area-top">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+              <User className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+            </div>
+            <span className="font-medium text-foreground text-sm sm:text-base">{userName}</span>
+          </div>
+          <div className="flex items-center gap-1 bg-success/20 text-success px-2 sm:px-3 py-1 sm:py-1.5 rounded-full">
+            <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="font-semibold text-xs sm:text-base">R${balance.toFixed(2)}</span>
+          </div>
+        </header>
+
+        {/* Blocked Content */}
+        <main className="relative z-10 flex items-center justify-center min-h-[calc(100vh-64px)] p-4">
+          <div className="text-center max-w-md mx-auto animate-fade-in-up">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
+              <Lock className="w-10 h-10 text-primary" />
+            </div>
+            
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
+              Você já teve seu match gratuito! 🎉
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              Para continuar conhecendo coroas incríveis e ter matches ilimitados, faça upgrade para Premium.
+            </p>
+            
+            <Button 
+              onClick={() => setShowVipPlans(true)} 
+              variant="hero" 
+              size="lg" 
+              className="w-full max-w-xs mx-auto"
+            >
+              <Crown className="w-5 h-5" />
+              Tornar-se Premium
+            </Button>
+
+            <p className="text-xs text-muted-foreground mt-4">
+              ✨ Matches ilimitados • 💬 Mensagens ilimitadas • 🎁 Presentes exclusivos
+            </p>
+          </div>
+        </main>
+
+        {/* VIP Plans Popup */}
+        <VipPlansPopup
+          isOpen={showVipPlans}
+          onClose={() => setShowVipPlans(false)}
+          onPurchase={handleVipPurchase}
+          limitType="matches"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       <BackgroundGrid useImage />
@@ -245,9 +316,9 @@ const Descobrir = () => {
             <User className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
           </div>
           <span className="font-medium text-foreground text-sm sm:text-base truncate max-w-[80px] sm:max-w-none">{userName}</span>
-          {isVip && (
+          {isPremium && (
             <span className="bg-gradient-to-r from-gold to-amber-500 text-background text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-              <Crown className="w-3 h-3" /> VIP
+              <Crown className="w-3 h-3" /> PREMIUM
             </span>
           )}
         </div>
@@ -259,21 +330,11 @@ const Descobrir = () => {
             <span className="font-semibold text-xs sm:text-base">R${balance.toFixed(2)}</span>
           </div>
 
-          {/* Stats with remaining */}
-          {!isVip && (
-            <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-              <div className="flex items-center gap-1">
-                <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-primary fill-primary" />
-                <span className={`font-semibold ${likesRemaining <= 2 ? 'text-destructive' : 'text-foreground'}`}>
-                  {likesRemaining}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <X className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
-                <span className={`font-semibold ${dislikesRemaining <= 1 ? 'text-destructive' : 'text-foreground'}`}>
-                  {dislikesRemaining}
-                </span>
-              </div>
+          {/* Premium badge or match hint */}
+          {!isPremium && (
+            <div className="flex items-center gap-1 bg-primary/20 text-primary px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs">
+              <Heart className="w-3 h-3 fill-primary" />
+              <span className="font-semibold">1 match grátis</span>
             </div>
           )}
         </div>
@@ -302,7 +363,7 @@ const Descobrir = () => {
         </p>
       </div>
 
-      {/* Match Popup */}
+      {/* Match Popup - hide continue button for free users after match */}
       <MatchPopup
         isOpen={showMatch}
         userName={userName}
@@ -312,7 +373,9 @@ const Descobrir = () => {
           setShowMatch(false);
           navigate("/chat", { state: { profile: matchedProfile } });
         }}
-        onClose={() => setShowMatch(false)}
+        onClose={handleMatchClose}
+        showContinueButton={isPremium}
+        isPremium={isPremium}
       />
 
       {/* VIP Plans Popup */}
@@ -320,8 +383,7 @@ const Descobrir = () => {
         isOpen={showVipPlans}
         onClose={() => setShowVipPlans(false)}
         onPurchase={handleVipPurchase}
-        limitType="likes"
-        currentLikes={likes}
+        limitType="matches"
       />
 
       {/* PIX Reward Popup */}

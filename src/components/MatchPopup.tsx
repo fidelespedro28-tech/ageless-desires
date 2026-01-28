@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, Crown } from "lucide-react";
 
 interface MatchPopupProps {
   isOpen: boolean;
@@ -9,6 +9,8 @@ interface MatchPopupProps {
   matchImage: string;
   onStartChat: () => void;
   onClose: () => void;
+  showContinueButton?: boolean;
+  isPremium?: boolean;
 }
 
 const MatchPopup = ({
@@ -19,6 +21,8 @@ const MatchPopup = ({
   matchImage,
   onStartChat,
   onClose,
+  showContinueButton = true,
+  isPremium = false,
 }: MatchPopupProps) => {
   if (!isOpen) return null;
 
@@ -65,9 +69,23 @@ const MatchPopup = ({
             <MessageCircle className="w-5 h-5" />
             Começar Conversa
           </Button>
-          <Button onClick={onClose} variant="ghost" size="lg" className="w-full">
-            Continuar Descobrindo
-          </Button>
+          
+          {/* Show continue button only if allowed (premium or first match not reached) */}
+          {showContinueButton && isPremium && (
+            <Button onClick={onClose} variant="ghost" size="lg" className="w-full">
+              Continuar Descobrindo
+            </Button>
+          )}
+          
+          {/* Premium upgrade hint for free users who reached limit */}
+          {!showContinueButton && !isPremium && (
+            <div className="mt-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                <Crown className="w-3 h-3 text-gold" />
+                Seja Premium para mais matches!
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
