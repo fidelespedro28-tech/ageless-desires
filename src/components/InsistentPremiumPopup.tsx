@@ -1,21 +1,15 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Crown, Zap, Heart, Lock, Star, X } from "lucide-react";
+import { Crown, Zap, Heart, Lock, Star, X, Diamond, Check, Flame } from "lucide-react";
+import { PLANS_ARRAY, PlanKey, CHECKOUT_LINKS } from "@/lib/checkoutLinks";
 import crownPopupImg from "@/assets/icons/crown-popup.png";
 
 interface InsistentPremiumPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onUpgrade: () => void;
-  trigger?: "likes_complete" | "chat_end" | "matches_return" | "general";
+  trigger?: "likes_complete" | "chat_end" | "matches_return" | "new_chat" | "general";
 }
-
-// URLs de checkout para os planos Premium
-const CHECKOUT_URLS = {
-  essencial: "https://pay.kirvano.com/coroa-club-essencial", // Substituir pelo link real
-  premium: "https://pay.kirvano.com/coroa-club-premium", // Substituir pelo link real
-  ultra: "https://pay.kirvano.com/coroa-club-ultra", // Substituir pelo link real
-};
 
 const InsistentPremiumPopup = ({ 
   isOpen, 
@@ -25,7 +19,7 @@ const InsistentPremiumPopup = ({
 }: InsistentPremiumPopupProps) => {
   const [canClose, setCanClose] = useState(false);
   const [closeTimer, setCloseTimer] = useState(5);
-  const [selectedPlan, setSelectedPlan] = useState<"essencial" | "premium" | "ultra">("premium");
+  const [selectedPlan, setSelectedPlan] = useState<PlanKey>("plano2");
 
   // Delay no botão de fechar para aumentar conversão
   useEffect(() => {
@@ -54,8 +48,8 @@ const InsistentPremiumPopup = ({
     switch (trigger) {
       case "likes_complete":
         return {
-          title: "🔥 Você curtiu todas as coroas!",
-          subtitle: "Mas ainda tem muito mais esperando por você...",
+          title: "🔥 Você usou todas as curtidas!",
+          subtitle: "Mas ainda tem muito mais coroas esperando por você...",
           cta: "Desbloquear coroas ilimitadas"
         };
       case "chat_end":
@@ -70,6 +64,12 @@ const InsistentPremiumPopup = ({
           subtitle: "Elas querem falar com você agora mesmo...",
           cta: "Ver todos os matches"
         };
+      case "new_chat":
+        return {
+          title: "💋 Quer iniciar uma nova conversa?",
+          subtitle: "Desbloqueie o acesso ilimitado para conversar sem limites!",
+          cta: "Liberar conversas ilimitadas"
+        };
       default:
         return {
           title: "👑 Desbloqueie Tudo Agora!",
@@ -83,13 +83,20 @@ const InsistentPremiumPopup = ({
 
   const handleUpgradeClick = () => {
     // Abre o link de checkout no navegador
-    window.open(CHECKOUT_URLS[selectedPlan], "_blank");
+    window.open(CHECKOUT_LINKS[selectedPlan].url, "_blank");
     onUpgrade();
+  };
+
+  const planIcons: Record<PlanKey, typeof Star> = {
+    plano1: Star,
+    plano2: Crown,
+    plano3: Flame,
+    plano4: Diamond,
   };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 bg-black/95 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-md bg-gradient-to-br from-[#1a0a20] via-[#1a1a2e] to-[#0f0a15] border-2 border-primary/40 rounded-2xl shadow-2xl shadow-primary/20 overflow-hidden animate-scale-in">
+      <div className="relative w-full max-w-md bg-gradient-to-br from-[#1a0a20] via-[#1a1a2e] to-[#0f0a15] border-2 border-primary/40 rounded-2xl shadow-2xl shadow-primary/20 overflow-hidden animate-scale-in max-h-[95vh] overflow-y-auto">
         
         {/* Glow effect */}
         <div className="absolute inset-0 bg-gradient-to-t from-primary/20 via-transparent to-transparent pointer-events-none" />
@@ -151,31 +158,40 @@ const InsistentPremiumPopup = ({
           </div>
         </div>
 
-        {/* Plan Selection Pills */}
+        {/* Plan Selection - 4 options with real checkout links */}
         <div className="px-4 mb-4">
-          <div className="flex gap-2 justify-center">
-            {[
-              { id: "essencial" as const, label: "R$ 19,90" },
-              { id: "premium" as const, label: "R$ 37,90", popular: true },
-              { id: "ultra" as const, label: "R$ 47,90" },
-            ].map((plan) => (
-              <button
-                key={plan.id}
-                onClick={() => setSelectedPlan(plan.id)}
-                className={`relative px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                  selectedPlan === plan.id
-                    ? "bg-gradient-to-r from-primary to-purple-accent text-white scale-105"
-                    : "bg-white/10 text-white/70 hover:bg-white/20"
-                }`}
-              >
-                {plan.popular && selectedPlan === plan.id && (
-                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gold text-background text-[8px] px-1.5 py-0.5 rounded-full">
-                    TOP
-                  </span>
-                )}
-                {plan.label}
-              </button>
-            ))}
+          <p className="text-white/60 text-xs text-center mb-2">Escolha seu plano:</p>
+          <div className="grid grid-cols-2 gap-2">
+            {PLANS_ARRAY.map((plan) => {
+              const IconComponent = planIcons[plan.id];
+              const isSelected = selectedPlan === plan.id;
+              
+              return (
+                <button
+                  key={plan.id}
+                  onClick={() => setSelectedPlan(plan.id)}
+                  className={`relative p-3 rounded-xl text-center transition-all ${
+                    isSelected
+                      ? "bg-gradient-to-r from-primary to-purple-accent text-white scale-105 border-2 border-primary"
+                      : "bg-white/10 text-white/70 hover:bg-white/20 border border-white/10"
+                  }`}
+                >
+                  {plan.popular && (
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gold text-background text-[8px] px-1.5 py-0.5 rounded-full font-bold">
+                      TOP
+                    </span>
+                  )}
+                  <IconComponent className={`w-5 h-5 mx-auto mb-1 ${isSelected ? "text-white" : "text-white/60"}`} />
+                  <div className="text-xs font-medium">{plan.name}</div>
+                  <div className="text-sm font-bold">{plan.price}</div>
+                  {isSelected && (
+                    <div className="absolute top-1 right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                      <Check className="w-3 h-3 text-primary" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -196,7 +212,7 @@ const InsistentPremiumPopup = ({
 
         {/* Bottom text for non-closable state */}
         {!canClose && (
-          <div className="absolute bottom-0 left-0 right-0 py-2 bg-gradient-to-t from-primary/20 to-transparent">
+          <div className="py-2 bg-gradient-to-t from-primary/20 to-transparent">
             <p className="text-center text-white/50 text-[10px] animate-pulse">
               Oferta exclusiva disponível por tempo limitado...
             </p>
@@ -208,6 +224,3 @@ const InsistentPremiumPopup = ({
 };
 
 export default InsistentPremiumPopup;
-
-// Export checkout URLs for use elsewhere
-export { CHECKOUT_URLS };

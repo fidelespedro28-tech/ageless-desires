@@ -9,7 +9,7 @@ import BottomNavigation from "@/components/BottomNavigation";
 import EditProfileModal from "@/components/EditProfileModal";
 import InsistentPremiumPopup from "@/components/InsistentPremiumPopup";
 import { LeadTracker } from "@/lib/leadTracker";
-import { useMatchLimit } from "@/hooks/useMatchLimit";
+import { useLikesLimit } from "@/hooks/useLikesLimit";
 import { useBalance } from "@/hooks/useBalance";
 import { useCrownIndex } from "@/hooks/useCrownIndex";
 import { Heart, X, Crown, DollarSign, User, Lock, Edit } from "lucide-react";
@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 import helenaImg from "@/assets/models/helena.jpg";
-import julianaImg from "@/assets/models/juliana-new.jpg"; // Nova imagem da Juliana
+import julianaImg from "@/assets/models/juliana-new.jpg";
 import fernandaImg from "@/assets/models/fernanda.jpg";
 import patriciaImg from "@/assets/models/patricia.jpg";
 import carolinaImg from "@/assets/models/carolina.jpg";
@@ -125,7 +125,6 @@ const Descobrir = () => {
   // Persistent crown index hook - continues from where user left off
   const { currentIndex, setCurrentIndex } = useCrownIndex(profiles.length);
   
-  const [likes, setLikes] = useState(0);
   const [userName] = useState(() => localStorage.getItem("userName") || "Gabriel");
   const [showMatch, setShowMatch] = useState(false);
   const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null);
@@ -135,20 +134,21 @@ const Descobrir = () => {
   const [pendingReward, setPendingReward] = useState(0);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showInsistentPopup, setShowInsistentPopup] = useState(false);
-  const [insistentTrigger, setInsistentTrigger] = useState<"likes_complete" | "chat_end" | "matches_return" | "general">("general");
+  const [insistentTrigger, setInsistentTrigger] = useState<"likes_complete" | "chat_end" | "matches_return" | "new_chat" | "general">("general");
 
   // Persistent balance hook - saldo consistente entre páginas
   const { balance, addBalance } = useBalance(0);
 
-  // Match limit hook - controls free/premium interactions
+  // Likes limit hook - controls free/premium interactions (5 likes grátis)
   const { 
+    likesUsed,
     hasReachedLimit, 
     isPremium, 
-    canInteract, 
-    registerMatch, 
+    canLike, 
+    maxFreeLikes,
+    registerLike, 
     enterPremiumMode,
-    freeMatchUsed
-  } = useMatchLimit();
+  } = useLikesLimit();
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000);
@@ -171,6 +171,12 @@ const Descobrir = () => {
         setShowInsistentPopup(true);
       }, 2000);
     }
+    if (lastPage === "/matches" && !isPremium) {
+      setTimeout(() => {
+        setInsistentTrigger("matches_return");
+        setShowInsistentPopup(true);
+      }, 1500);
+    }
     localStorage.setItem("lastVisitedPage", "/descobrir");
   }, [isPremium]);
 
@@ -178,13 +184,17 @@ const Descobrir = () => {
 
   const handleLike = () => {
     // Block if limit reached and not premium
-    if (!canInteract) {
+    if (!canLike) {
       setShowVipPlans(true);
       return;
     }
 
-    const newLikes = likes + 1;
-    setLikes(newLikes);
+    // Try to register like
+    const registered = registerLike();
+    if (!registered) {
+      setShowVipPlans(true);
+      return;
+    }
     
     // Registra like no tracker
     LeadTracker.incrementLikes();
@@ -192,26 +202,33 @@ const Descobrir = () => {
     // Generate random reward between R$ 4,00 and R$ 9,90
     const reward = parseFloat((Math.random() * (9.90 - 4.00) + 4.00).toFixed(2));
     setPendingReward(reward);
-    addBalance(reward); // Usa o hook persistente
+    addBalance(reward);
     
     // Show PIX reward popup
     setShowPixReward(true);
 
-    // Match happens on first like for free users, or every 3 likes for premium
-    const shouldMatch = isPremium ? newLikes % 3 === 0 : newLikes === 1;
+    // Match happens on first like, or every 3 likes for premium
+    const newLikesCount = likesUsed + 1;
+    const shouldMatch = isPremium ? newLikesCount % 3 === 0 : newLikesCount === 1;
     
     if (shouldMatch) {
       setMatchedProfile(currentProfile);
-      registerMatch(); // Register match in the limit system
-      // Registra match no tracker (dispara AddToCart)
       LeadTracker.registerMatch(currentProfile.name);
     }
 
     // Advance to next crown (persisted)
     setCurrentIndex(currentIndex + 1);
 
-    // Check if all profiles viewed (show insistent popup)
-    if (currentIndex + 1 >= profiles.length && isPremium) {
+    // Check if reached limit after this like - show popup
+    if (!isPremium && newLikesCount >= maxFreeLikes) {
+      setTimeout(() => {
+        setInsistentTrigger("likes_complete");
+        setShowInsistentPopup(true);
+      }, 1500);
+    }
+
+    // Check if all profiles viewed (show insistent popup for premium users too)
+    if (currentIndex + 1 >= profiles.length) {
       setTimeout(() => {
         setInsistentTrigger("likes_complete");
         setShowInsistentPopup(true);
@@ -223,7 +240,8 @@ const Descobrir = () => {
     setShowPixReward(false);
     
     // Check if there's a pending match
-    const shouldMatch = isPremium ? likes % 3 === 0 : likes === 1;
+    const newLikesCount = likesUsed;
+    const shouldMatch = isPremium ? newLikesCount % 3 === 0 : newLikesCount === 1;
     if (matchedProfile && shouldMatch) {
       setTimeout(() => setShowMatch(true), 300);
     }
@@ -231,7 +249,7 @@ const Descobrir = () => {
 
   const handleDislike = () => {
     // Block if limit reached and not premium
-    if (!canInteract) {
+    if (!canLike) {
       setShowVipPlans(true);
       return;
     }
@@ -243,18 +261,19 @@ const Descobrir = () => {
   const handleVipPurchase = (plan: string) => {
     setShowVipPlans(false);
     setShowInsistentPopup(false);
-    enterPremiumMode(); // Unlock premium mode
+    enterPremiumMode();
     
     // Registra compra no tracker (dispara Purchase)
     const planValues: Record<string, number> = {
-      essencial: 19.90,
-      premium: 37.90,
-      ultra: 47.90
+      plano1: 19.90,
+      plano2: 37.90,
+      plano3: 47.90,
+      plano4: 97.00
     };
     LeadTracker.registerPurchase(plan, planValues[plan] || 47.90);
     
     toast.success("🎉 Premium Ativado!", {
-      description: `Plano ${plan.charAt(0).toUpperCase() + plan.slice(1)} ativado - Matches ilimitados!`
+      description: "Curtidas e matches ilimitados liberados!"
     });
   };
 
@@ -279,8 +298,8 @@ const Descobrir = () => {
     );
   }
 
-  // Blocked state - show premium upgrade screen (match gratuito já foi usado)
-  if ((hasReachedLimit || freeMatchUsed) && !isPremium) {
+  // Blocked state - show premium upgrade screen (curtidas esgotadas)
+  if (hasReachedLimit && !isPremium) {
     return (
       <div className="min-h-screen relative overflow-hidden pb-16">
         <BackgroundGrid useImage />
@@ -307,10 +326,10 @@ const Descobrir = () => {
             </div>
             
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
-              Você já teve seu match gratuito! 🎉
+              Você usou suas {maxFreeLikes} curtidas grátis! 🔥
             </h2>
             <p className="text-muted-foreground mb-6">
-              Para continuar conhecendo coroas incríveis e ter matches ilimitados, faça upgrade para Premium.
+              Para continuar conhecendo coroas incríveis e ter curtidas ilimitadas, faça upgrade para Premium.
             </p>
             
             <Button 
@@ -324,7 +343,7 @@ const Descobrir = () => {
             </Button>
 
             <p className="text-xs text-muted-foreground mt-4">
-              ✨ Matches ilimitados • 💬 Mensagens ilimitadas • 🎁 Presentes exclusivos
+              ✨ Curtidas ilimitadas • 💬 Mensagens ilimitadas • 🎁 Presentes exclusivos
             </p>
           </div>
         </main>
@@ -337,7 +356,16 @@ const Descobrir = () => {
           isOpen={showVipPlans}
           onClose={() => setShowVipPlans(false)}
           onPurchase={handleVipPurchase}
-          limitType="matches"
+          limitType="likes"
+          currentLikes={likesUsed}
+        />
+
+        {/* Insistent Premium Popup */}
+        <InsistentPremiumPopup
+          isOpen={showInsistentPopup}
+          onClose={() => setShowInsistentPopup(false)}
+          onUpgrade={() => handleVipPurchase("plano2")}
+          trigger={insistentTrigger}
         />
       </div>
     );
@@ -374,17 +402,17 @@ const Descobrir = () => {
             <span className="font-semibold text-xs sm:text-base">R${balance.toFixed(2)}</span>
           </div>
 
-          {/* Premium badge or match hint */}
+          {/* Likes counter for free users */}
           {!isPremium && (
             <div className="flex items-center gap-1 bg-primary/20 text-primary px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs">
               <Heart className="w-3 h-3 fill-primary" />
-              <span className="font-semibold">1 match grátis</span>
+              <span className="font-semibold">{likesUsed}/{maxFreeLikes}</span>
             </div>
           )}
         </div>
       </header>
 
-      {/* Main Content - Better vertical centering on mobile */}
+      {/* Main Content */}
       <main className="relative z-10 flex items-center justify-center min-h-[calc(100vh-140px)] p-3 sm:p-4">
         <ProfileCard
           key={currentProfile.id}
@@ -409,7 +437,7 @@ const Descobrir = () => {
         onClose={() => setShowEditProfile(false)}
       />
 
-      {/* Match Popup - hide continue button for free users after match */}
+      {/* Match Popup */}
       <MatchPopup
         isOpen={showMatch}
         userName={userName}
@@ -429,7 +457,8 @@ const Descobrir = () => {
         isOpen={showVipPlans}
         onClose={() => setShowVipPlans(false)}
         onPurchase={handleVipPurchase}
-        limitType="matches"
+        limitType="likes"
+        currentLikes={likesUsed}
       />
 
       {/* PIX Reward Popup */}
@@ -442,7 +471,7 @@ const Descobrir = () => {
       <InsistentPremiumPopup
         isOpen={showInsistentPopup}
         onClose={() => setShowInsistentPopup(false)}
-        onUpgrade={() => handleVipPurchase("premium")}
+        onUpgrade={() => handleVipPurchase("plano2")}
         trigger={insistentTrigger}
       />
     </div>
