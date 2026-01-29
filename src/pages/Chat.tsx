@@ -6,6 +6,7 @@ import AudioMessage from "@/components/AudioMessage";
 import GiftNotification from "@/components/GiftNotification";
 import PixPopup from "@/components/PixPopup";
 import VipPlansPopup from "@/components/VipPlansPopup";
+import InsistentPremiumPopup from "@/components/InsistentPremiumPopup";
 import { LeadTracker } from "@/lib/leadTracker";
 import { useBalance } from "@/hooks/useBalance";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, Mic, DollarSign, Crown } from "lucide-react";
 import { toast } from "sonner";
 
-import julianaImg from "@/assets/models/juliana.jpg";
+import julianaImg from "@/assets/models/juliana-new.jpg"; // Nova imagem da Juliana
 
 interface Message {
   id: number;
@@ -65,9 +66,15 @@ const Chat = () => {
   const [showGiftNotification, setShowGiftNotification] = useState(false);
   const [showPixPopup, setShowPixPopup] = useState(false);
   const [showVipPlans, setShowVipPlans] = useState(false);
+  const [showInsistentPopup, setShowInsistentPopup] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [messagesUsed, setMessagesUsed] = useState(0);
   const [isVip, setIsVip] = useState(false);
+  
+  // Track last page for insistent popup triggers
+  useEffect(() => {
+    localStorage.setItem("lastVisitedPage", "/chat");
+  }, []);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -132,11 +139,18 @@ const Chat = () => {
     // Registra mensagem no tracker
     LeadTracker.incrementMessages();
 
-    // Show VIP popup when messages run out
+    // Show VIP popup when messages run out, then show insistent popup
     if (!isVip && messagesUsed + 1 >= MAX_MESSAGES) {
       setTimeout(() => {
         setShowVipPlans(true);
       }, 3000);
+      
+      // Show insistent popup after VIP plans is closed
+      setTimeout(() => {
+        if (!isVip) {
+          setShowInsistentPopup(true);
+        }
+      }, 10000);
     }
 
     // Simulate typing
@@ -174,6 +188,7 @@ const Chat = () => {
 
   const handleVipPurchase = (plan: string) => {
     setShowVipPlans(false);
+    setShowInsistentPopup(false);
     setIsVip(true);
     
     // Registra compra no tracker (dispara Purchase)
@@ -378,6 +393,14 @@ const Chat = () => {
         onPurchase={handleVipPurchase}
         limitType="messages"
         currentMessages={messagesUsed}
+      />
+
+      {/* Insistent Premium Popup */}
+      <InsistentPremiumPopup
+        isOpen={showInsistentPopup}
+        onClose={() => setShowInsistentPopup(false)}
+        onUpgrade={() => handleVipPurchase("premium")}
+        trigger="chat_end"
       />
     </div>
   );

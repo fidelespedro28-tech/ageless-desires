@@ -6,15 +6,18 @@ import MatchPopup from "@/components/MatchPopup";
 import VipPlansPopup from "@/components/VipPlansPopup";
 import PixRewardPopup from "@/components/PixRewardPopup";
 import BottomNavigation from "@/components/BottomNavigation";
+import EditProfileModal from "@/components/EditProfileModal";
+import InsistentPremiumPopup from "@/components/InsistentPremiumPopup";
 import { LeadTracker } from "@/lib/leadTracker";
 import { useMatchLimit } from "@/hooks/useMatchLimit";
 import { useBalance } from "@/hooks/useBalance";
-import { Heart, X, Crown, DollarSign, User, Lock } from "lucide-react";
+import { useCrownIndex } from "@/hooks/useCrownIndex";
+import { Heart, X, Crown, DollarSign, User, Lock, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 import helenaImg from "@/assets/models/helena.jpg";
-import julianaImg from "@/assets/models/juliana.jpg";
+import julianaImg from "@/assets/models/juliana-new.jpg"; // Nova imagem da Juliana
 import fernandaImg from "@/assets/models/fernanda.jpg";
 import patriciaImg from "@/assets/models/patricia.jpg";
 import carolinaImg from "@/assets/models/carolina.jpg";
@@ -118,9 +121,11 @@ const profiles: Profile[] = [
 
 const Descobrir = () => {
   const navigate = useNavigate();
-  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  // Persistent crown index hook - continues from where user left off
+  const { currentIndex, setCurrentIndex } = useCrownIndex(profiles.length);
+  
   const [likes, setLikes] = useState(0);
-  const [dislikes, setDislikes] = useState(0);
   const [userName] = useState(() => localStorage.getItem("userName") || "Gabriel");
   const [showMatch, setShowMatch] = useState(false);
   const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null);
@@ -128,6 +133,9 @@ const Descobrir = () => {
   const [showVipPlans, setShowVipPlans] = useState(false);
   const [showPixReward, setShowPixReward] = useState(false);
   const [pendingReward, setPendingReward] = useState(0);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showInsistentPopup, setShowInsistentPopup] = useState(false);
+  const [insistentTrigger, setInsistentTrigger] = useState<"likes_complete" | "chat_end" | "matches_return" | "general">("general");
 
   // Persistent balance hook - saldo consistente entre páginas
   const { balance, addBalance } = useBalance(0);
@@ -154,7 +162,19 @@ const Descobrir = () => {
     }
   }, [hasReachedLimit, isPremium]);
 
-  const currentProfile = profiles[currentIndex % profiles.length];
+  // Show insistent popup when returning from matches/chat (for premium conversion)
+  useEffect(() => {
+    const lastPage = localStorage.getItem("lastVisitedPage");
+    if (lastPage === "/chat" && !isPremium) {
+      setTimeout(() => {
+        setInsistentTrigger("chat_end");
+        setShowInsistentPopup(true);
+      }, 2000);
+    }
+    localStorage.setItem("lastVisitedPage", "/descobrir");
+  }, [isPremium]);
+
+  const currentProfile = profiles[currentIndex];
 
   const handleLike = () => {
     // Block if limit reached and not premium
@@ -187,7 +207,16 @@ const Descobrir = () => {
       LeadTracker.registerMatch(currentProfile.name);
     }
 
-    setCurrentIndex((prev) => prev + 1);
+    // Advance to next crown (persisted)
+    setCurrentIndex(currentIndex + 1);
+
+    // Check if all profiles viewed (show insistent popup)
+    if (currentIndex + 1 >= profiles.length && isPremium) {
+      setTimeout(() => {
+        setInsistentTrigger("likes_complete");
+        setShowInsistentPopup(true);
+      }, 1500);
+    }
   };
   
   const handlePixRewardContinue = () => {
@@ -207,12 +236,13 @@ const Descobrir = () => {
       return;
     }
 
-    setDislikes((prev) => prev + 1);
-    setCurrentIndex((prev) => prev + 1);
+    // Advance to next crown (persisted)
+    setCurrentIndex(currentIndex + 1);
   };
 
   const handleVipPurchase = (plan: string) => {
     setShowVipPlans(false);
+    setShowInsistentPopup(false);
     enterPremiumMode(); // Unlock premium mode
     
     // Registra compra no tracker (dispara Purchase)
@@ -320,9 +350,15 @@ const Descobrir = () => {
       {/* Header - Mobile optimized */}
       <header className="relative z-20 flex items-center justify-between p-3 sm:p-4 bg-card/80 backdrop-blur-sm border-b border-border safe-area-top">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+          <button 
+            onClick={() => setShowEditProfile(true)}
+            className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center group"
+          >
             <User className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
-          </div>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-card border border-border rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Edit className="w-2.5 h-2.5 text-primary" />
+            </div>
+          </button>
           <span className="font-medium text-foreground text-sm sm:text-base truncate max-w-[80px] sm:max-w-none">{userName}</span>
           {isPremium && (
             <span className="bg-gradient-to-r from-gold to-amber-500 text-background text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -367,6 +403,12 @@ const Descobrir = () => {
       {/* Bottom Navigation */}
       <BottomNavigation />
 
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={showEditProfile}
+        onClose={() => setShowEditProfile(false)}
+      />
+
       {/* Match Popup - hide continue button for free users after match */}
       <MatchPopup
         isOpen={showMatch}
@@ -394,6 +436,14 @@ const Descobrir = () => {
       <PixRewardPopup
         isOpen={showPixReward}
         onContinue={handlePixRewardContinue}
+      />
+
+      {/* Insistent Premium Popup */}
+      <InsistentPremiumPopup
+        isOpen={showInsistentPopup}
+        onClose={() => setShowInsistentPopup(false)}
+        onUpgrade={() => handleVipPurchase("premium")}
+        trigger={insistentTrigger}
       />
     </div>
   );
