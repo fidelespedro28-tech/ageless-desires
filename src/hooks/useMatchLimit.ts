@@ -7,6 +7,7 @@ interface MatchLimitData {
   hasReachedLimit: boolean;
   isPremium: boolean;
   firstMatchAt: string | null;
+  freeMatchUsed: boolean; // Novo: marca se o match gratuito foi consumido
 }
 
 interface UseMatchLimitReturn {
@@ -14,6 +15,7 @@ interface UseMatchLimitReturn {
   matchCount: number;
   hasReachedLimit: boolean;
   isPremium: boolean;
+  freeMatchUsed: boolean;
   
   // Checks
   canInteract: boolean;
@@ -22,6 +24,7 @@ interface UseMatchLimitReturn {
   registerMatch: () => boolean;
   enterPremiumMode: () => void;
   resetMatchLimit: () => void;
+  markFreeMatchAsUsed: () => void; // Novo: marca o match gratuito como consumido
 }
 
 const MAX_FREE_MATCHES = 1;
@@ -41,6 +44,7 @@ const getInitialData = (): MatchLimitData => {
     hasReachedLimit: false,
     isPremium: false,
     firstMatchAt: null,
+    freeMatchUsed: false,
   };
 };
 
@@ -56,13 +60,8 @@ export const useMatchLimit = (): UseMatchLimitReturn => {
     }
   }, [data]);
 
-  // User can interact if premium OR hasn't reached match limit
-  const canInteract = data.isPremium || !data.hasReachedLimit;
-
-  // Check if user has reached free match limit
-  const hasReachedMatchLimit = useCallback((): boolean => {
-    return !data.isPremium && data.matchCount >= MAX_FREE_MATCHES;
-  }, [data.isPremium, data.matchCount]);
+  // User can interact if premium OR hasn't used free match yet
+  const canInteract = data.isPremium || (!data.hasReachedLimit && !data.freeMatchUsed);
 
   // Register a new match
   const registerMatch = useCallback((): boolean => {
@@ -75,7 +74,7 @@ export const useMatchLimit = (): UseMatchLimitReturn => {
       return true;
     }
 
-    if (data.matchCount >= MAX_FREE_MATCHES) {
+    if (data.matchCount >= MAX_FREE_MATCHES || data.freeMatchUsed) {
       // Already at limit
       return false;
     }
@@ -88,13 +87,26 @@ export const useMatchLimit = (): UseMatchLimitReturn => {
       ...prev,
       matchCount: newCount,
       hasReachedLimit: reachedLimit,
+      freeMatchUsed: true,
       firstMatchAt: prev.firstMatchAt || new Date().toISOString(),
     }));
 
     console.log(`🎯 Match registrado: ${newCount}/${MAX_FREE_MATCHES}`);
     
     return true;
-  }, [data.isPremium, data.matchCount]);
+  }, [data.isPremium, data.matchCount, data.freeMatchUsed]);
+
+  // Marca o match gratuito como usado (após completar perfil)
+  const markFreeMatchAsUsed = useCallback(() => {
+    setData((prev) => ({
+      ...prev,
+      freeMatchUsed: true,
+      hasReachedLimit: true,
+      matchCount: 1, // Considera que já teve 1 match
+      firstMatchAt: prev.firstMatchAt || new Date().toISOString(),
+    }));
+    console.log("🔒 Match gratuito consumido automaticamente");
+  }, []);
 
   // Enter premium mode
   const enterPremiumMode = useCallback(() => {
@@ -113,6 +125,7 @@ export const useMatchLimit = (): UseMatchLimitReturn => {
       hasReachedLimit: false,
       isPremium: false,
       firstMatchAt: null,
+      freeMatchUsed: false,
     };
     setData(initialData);
     localStorage.removeItem(MATCH_LIMIT_KEY);
@@ -123,10 +136,12 @@ export const useMatchLimit = (): UseMatchLimitReturn => {
     matchCount: data.matchCount,
     hasReachedLimit: data.hasReachedLimit,
     isPremium: data.isPremium,
+    freeMatchUsed: data.freeMatchUsed,
     canInteract,
     registerMatch,
     enterPremiumMode,
     resetMatchLimit,
+    markFreeMatchAsUsed,
   };
 };
 
@@ -136,7 +151,7 @@ export const hasReachedMatchLimit = (): boolean => {
     const stored = localStorage.getItem(MATCH_LIMIT_KEY);
     if (stored) {
       const data: MatchLimitData = JSON.parse(stored);
-      return !data.isPremium && data.matchCount >= MAX_FREE_MATCHES;
+      return !data.isPremium && (data.matchCount >= MAX_FREE_MATCHES || data.freeMatchUsed);
     }
   } catch {
     // Ignore errors
@@ -155,4 +170,42 @@ export const isPremiumUser = (): boolean => {
     // Ignore errors
   }
   return false;
+};
+
+// Verifica se o match gratuito já foi usado
+export const hasUsedFreeMatch = (): boolean => {
+  try {
+    const stored = localStorage.getItem(MATCH_LIMIT_KEY);
+    if (stored) {
+      const data: MatchLimitData = JSON.parse(stored);
+      return data.freeMatchUsed;
+    }
+  } catch {
+    // Ignore errors
+  }
+  return false;
+};
+
+// Marca o match gratuito como usado (função standalone)
+export const markFreeMatchAsUsedGlobal = (): void => {
+  try {
+    const stored = localStorage.getItem(MATCH_LIMIT_KEY);
+    const data: MatchLimitData = stored ? JSON.parse(stored) : {
+      matchCount: 0,
+      hasReachedLimit: false,
+      isPremium: false,
+      firstMatchAt: null,
+      freeMatchUsed: false,
+    };
+    
+    data.freeMatchUsed = true;
+    data.hasReachedLimit = true;
+    data.matchCount = 1;
+    data.firstMatchAt = data.firstMatchAt || new Date().toISOString();
+    
+    localStorage.setItem(MATCH_LIMIT_KEY, JSON.stringify(data));
+    console.log("🔒 Match gratuito consumido (global)");
+  } catch (error) {
+    console.error("Failed to mark free match as used:", error);
+  }
 };
