@@ -9,6 +9,7 @@ import VipPlansPopup from "@/components/VipPlansPopup";
 import InsistentPremiumPopup from "@/components/InsistentPremiumPopup";
 import { LeadTracker } from "@/lib/leadTracker";
 import { useBalance } from "@/hooks/useBalance";
+import { useLikesLimit } from "@/hooks/useLikesLimit";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, Mic, DollarSign, Crown } from "lucide-react";
@@ -67,9 +68,13 @@ const Chat = () => {
   const [showPixPopup, setShowPixPopup] = useState(false);
   const [showVipPlans, setShowVipPlans] = useState(false);
   const [showInsistentPopup, setShowInsistentPopup] = useState(false);
+  const [insistentTrigger, setInsistentTrigger] = useState<"likes_complete" | "chat_end" | "matches_return" | "new_chat" | "general">("chat_end");
   const [isTyping, setIsTyping] = useState(false);
   const [messagesUsed, setMessagesUsed] = useState(0);
-  const [isVip, setIsVip] = useState(false);
+  
+  // Likes/Premium limit hook
+  const { isPremium, enterPremiumMode } = useLikesLimit();
+  const isVip = isPremium;
   
   // Track last page for insistent popup triggers
   useEffect(() => {
@@ -189,18 +194,19 @@ const Chat = () => {
   const handleVipPurchase = (plan: string) => {
     setShowVipPlans(false);
     setShowInsistentPopup(false);
-    setIsVip(true);
+    enterPremiumMode();
     
     // Registra compra no tracker (dispara Purchase)
     const planValues: Record<string, number> = {
-      essencial: 19.90,
-      premium: 37.90,
-      ultra: 47.90
+      plano1: 19.90,
+      plano2: 37.90,
+      plano3: 47.90,
+      plano4: 97.00
     };
     LeadTracker.registerPurchase(plan, planValues[plan] || 47.90);
     
     toast.success("🎉 VIP Ativado!", {
-      description: `Plano ${plan.charAt(0).toUpperCase() + plan.slice(1)} - Mensagens ilimitadas!`
+      description: "Mensagens ilimitadas liberadas!"
     });
   };
 
@@ -399,8 +405,8 @@ const Chat = () => {
       <InsistentPremiumPopup
         isOpen={showInsistentPopup}
         onClose={() => setShowInsistentPopup(false)}
-        onUpgrade={() => handleVipPurchase("premium")}
-        trigger="chat_end"
+        onUpgrade={() => handleVipPurchase("plano2")}
+        trigger={insistentTrigger}
       />
     </div>
   );
