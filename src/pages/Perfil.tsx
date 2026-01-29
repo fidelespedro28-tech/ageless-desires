@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import BackgroundGrid from "@/components/BackgroundGrid";
 import Logo from "@/components/Logo";
 import { LeadTracker } from "@/lib/leadTracker";
+import { markFreeMatchAsUsedGlobal } from "@/hooks/useMatchLimit";
 import { 
   ArrowLeft, 
   Camera, 
@@ -108,10 +109,15 @@ const Perfil = () => {
     setShowConfirmPopup(true);
   };
 
-  // Continua para página de boas-vindas
+  // Continua para página de descobrir (já com match consumido)
   const handleContinue = () => {
     setShowConfirmPopup(false);
-    navigate("/bem-vindo");
+    
+    // Marca o match gratuito como consumido antes de redirecionar
+    markFreeMatchAsUsedGlobal();
+    
+    // Redireciona direto para descobrir (que mostrará a tela de bloqueio)
+    navigate("/descobrir");
   };
 
   return (

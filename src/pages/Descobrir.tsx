@@ -5,8 +5,10 @@ import ProfileCard from "@/components/ProfileCard";
 import MatchPopup from "@/components/MatchPopup";
 import VipPlansPopup from "@/components/VipPlansPopup";
 import PixRewardPopup from "@/components/PixRewardPopup";
+import BottomNavigation from "@/components/BottomNavigation";
 import { LeadTracker } from "@/lib/leadTracker";
 import { useMatchLimit } from "@/hooks/useMatchLimit";
+import { useBalance } from "@/hooks/useBalance";
 import { Heart, X, Crown, DollarSign, User, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -119,7 +121,6 @@ const Descobrir = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [likes, setLikes] = useState(0);
   const [dislikes, setDislikes] = useState(0);
-  const [balance, setBalance] = useState(0);
   const [userName] = useState(() => localStorage.getItem("userName") || "Gabriel");
   const [showMatch, setShowMatch] = useState(false);
   const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null);
@@ -128,13 +129,17 @@ const Descobrir = () => {
   const [showPixReward, setShowPixReward] = useState(false);
   const [pendingReward, setPendingReward] = useState(0);
 
+  // Persistent balance hook - saldo consistente entre páginas
+  const { balance, addBalance } = useBalance(0);
+
   // Match limit hook - controls free/premium interactions
   const { 
     hasReachedLimit, 
     isPremium, 
     canInteract, 
     registerMatch, 
-    enterPremiumMode 
+    enterPremiumMode,
+    freeMatchUsed
   } = useMatchLimit();
 
   useEffect(() => {
@@ -167,7 +172,7 @@ const Descobrir = () => {
     // Generate random reward between R$ 4,00 and R$ 9,90
     const reward = parseFloat((Math.random() * (9.90 - 4.00) + 4.00).toFixed(2));
     setPendingReward(reward);
-    setBalance((prev) => prev + reward);
+    addBalance(reward); // Usa o hook persistente
     
     // Show PIX reward popup
     setShowPixReward(true);
@@ -244,10 +249,10 @@ const Descobrir = () => {
     );
   }
 
-  // Blocked state - show premium upgrade screen
-  if (hasReachedLimit && !isPremium) {
+  // Blocked state - show premium upgrade screen (match gratuito já foi usado)
+  if ((hasReachedLimit || freeMatchUsed) && !isPremium) {
     return (
-      <div className="min-h-screen relative overflow-hidden">
+      <div className="min-h-screen relative overflow-hidden pb-16">
         <BackgroundGrid useImage />
         
         {/* Header */}
@@ -265,7 +270,7 @@ const Descobrir = () => {
         </header>
 
         {/* Blocked Content */}
-        <main className="relative z-10 flex items-center justify-center min-h-[calc(100vh-64px)] p-4">
+        <main className="relative z-10 flex items-center justify-center min-h-[calc(100vh-140px)] p-4">
           <div className="text-center max-w-md mx-auto animate-fade-in-up">
             <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
               <Lock className="w-10 h-10 text-primary" />
@@ -294,6 +299,9 @@ const Descobrir = () => {
           </div>
         </main>
 
+        {/* Bottom Navigation */}
+        <BottomNavigation />
+
         {/* VIP Plans Popup */}
         <VipPlansPopup
           isOpen={showVipPlans}
@@ -306,7 +314,7 @@ const Descobrir = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden pb-16">
       <BackgroundGrid useImage />
 
       {/* Header - Mobile optimized */}
@@ -341,7 +349,7 @@ const Descobrir = () => {
       </header>
 
       {/* Main Content - Better vertical centering on mobile */}
-      <main className="relative z-10 flex items-center justify-center min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-80px)] p-3 sm:p-4 pb-16 sm:pb-4">
+      <main className="relative z-10 flex items-center justify-center min-h-[calc(100vh-140px)] p-3 sm:p-4">
         <ProfileCard
           key={currentProfile.id}
           name={currentProfile.name}
@@ -356,12 +364,8 @@ const Descobrir = () => {
         />
       </main>
 
-      {/* Bottom hint - Safe area */}
-      <div className="fixed bottom-2 sm:bottom-4 left-0 right-0 z-20 text-center safe-area-bottom">
-        <p className="text-[10px] sm:text-xs text-muted-foreground px-4">
-          💡 Curta para ganhar recompensas e encontrar seu match!
-        </p>
-      </div>
+      {/* Bottom Navigation */}
+      <BottomNavigation />
 
       {/* Match Popup - hide continue button for free users after match */}
       <MatchPopup
