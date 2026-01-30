@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 
 const LIKES_LIMIT_KEY = "likesLimitData";
+const MIN_LIKES_FOR_MATCH = 5; // Mínimo de curtidas para liberar match
 
 interface LikesLimitData {
   likesUsed: number;
@@ -15,9 +16,11 @@ interface UseLikesLimitReturn {
   hasReachedLimit: boolean;
   isPremium: boolean;
   maxFreeLikes: number;
+  minLikesForMatch: number;
   
   // Checks
   canLike: boolean;
+  canReceiveMatch: boolean; // Novo: verifica se pode receber match
   
   // Actions
   registerLike: () => boolean;
@@ -59,6 +62,9 @@ export const useLikesLimit = (): UseLikesLimitReturn => {
 
   // User can like if premium OR hasn't reached limit
   const canLike = data.isPremium || !data.hasReachedLimit;
+  
+  // User can receive match only after MIN_LIKES_FOR_MATCH (5 curtidas)
+  const canReceiveMatch = data.isPremium || data.likesUsed >= MIN_LIKES_FOR_MATCH;
 
   // Register a new like
   const registerLike = useCallback((): boolean => {
@@ -121,7 +127,9 @@ export const useLikesLimit = (): UseLikesLimitReturn => {
     hasReachedLimit: data.hasReachedLimit,
     isPremium: data.isPremium,
     maxFreeLikes: MAX_FREE_LIKES,
+    minLikesForMatch: MIN_LIKES_FOR_MATCH,
     canLike,
+    canReceiveMatch,
     registerLike,
     enterPremiumMode,
     resetLikesLimit,
@@ -169,3 +177,18 @@ export const isPremiumUser = (): boolean => {
 };
 
 export const MAX_LIKES = MAX_FREE_LIKES;
+export const MIN_CLICKS_FOR_MATCH = MIN_LIKES_FOR_MATCH;
+
+// Verifica se pode receber match (após 5 curtidas)
+export const canReceiveMatchGlobal = (): boolean => {
+  try {
+    const stored = localStorage.getItem(LIKES_LIMIT_KEY);
+    if (stored) {
+      const data: LikesLimitData = JSON.parse(stored);
+      return data.isPremium || data.likesUsed >= MIN_LIKES_FOR_MATCH;
+    }
+  } catch {
+    // Ignore errors
+  }
+  return false;
+};
