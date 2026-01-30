@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import BackgroundGrid from "@/components/BackgroundGrid";
 import ChatMessage from "@/components/ChatMessage";
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, Mic, DollarSign, Crown } from "lucide-react";
 import { toast } from "sonner";
 
-import julianaImg from "@/assets/models/juliana-new.jpg"; // Nova imagem da Juliana
+import julianaImg from "@/assets/models/juliana-new.jpg";
 
 interface Message {
   id: number;
@@ -26,10 +26,10 @@ interface Message {
   audioSrc?: string;
 }
 
-// Áudios disponíveis das coroas
-const audioFiles = ["/audios/audio1.mp3", "/audios/audio2.mp3"];
-
-const getRandomAudio = () => audioFiles[Math.floor(Math.random() * audioFiles.length)];
+// Áudios específicos das coroas (em ordem)
+const AUDIO_START = "/audios/audio1.mp3"; // Áudio de boas-vindas (12s)
+const AUDIO_END = "/audios/audio2.mp3";   // Áudio de despedida/final
+const AUDIO_CASH = "/audios/audio-cash.mp3"; // Áudio do PIX
 
 const modelResponses = [
   "Oi amor! Que bom te conhecer aqui 💋",
@@ -39,13 +39,6 @@ const modelResponses = [
   "Que tal a gente se conhecer melhor? Estou online agora...",
   "Você me deixou curiosa... O que você está procurando aqui?",
   "Hmm, gostei de você! Vou te enviar um presentinho 💕"
-];
-
-// Mensagens de áudio que a coroa pode enviar
-const audioMessages = [
-  "Hmm... que voz gostosa que você deve ter 🎧",
-  "Adorei receber sua mensagem... escuta o que eu tenho pra te dizer 💋",
-  "Ei gatinho... escuta isso aqui com atenção 😏",
 ];
 
 const MAX_MESSAGES = 4;
@@ -72,6 +65,10 @@ const Chat = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [messagesUsed, setMessagesUsed] = useState(0);
   
+  // Controle de áudios automáticos (evita repetição)
+  const [hasSentStartAudio, setHasSentStartAudio] = useState(false);
+  const [hasSentEndAudio, setHasSentEndAudio] = useState(false);
+  
   // Likes/Premium limit hook
   const { isPremium, enterPremiumMode } = useLikesLimit();
   const isVip = isPremium;
@@ -80,6 +77,7 @@ const Chat = () => {
   useEffect(() => {
     localStorage.setItem("lastVisitedPage", "/chat");
   }, []);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -90,9 +88,42 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Verifica se é o fim da conversa
+  const isEndOfConversation = useCallback(() => {
+    return !isVip && messagesUsed >= MAX_MESSAGES - 1;
+  }, [isVip, messagesUsed]);
+
+  // Envia áudio automático da coroa
+  const sendCoroaAudio = useCallback((audioType: 'start' | 'end') => {
+    const audioSrc = audioType === 'start' ? AUDIO_START : AUDIO_END;
+    const messageText = audioType === 'start' 
+      ? "Escuta essa mensagem especial que eu gravei só pra você... 🎧💕"
+      : "Antes de você ir... escuta isso aqui, gatinho 💋🔥";
+    
+    const audioMessage: Message = {
+      id: Date.now(),
+      content: messageText,
+      isUser: false,
+      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      isAudio: true,
+      audioSrc: audioSrc,
+    };
+    
+    setMessages((prev) => [...prev, audioMessage]);
+    
+    if (audioType === 'start') {
+      setHasSentStartAudio(true);
+    } else {
+      setHasSentEndAudio(true);
+    }
+    
+    console.log(`🎵 Áudio ${audioType} enviado automaticamente`);
+  }, []);
+
+  // Inicialização do chat - mensagem de texto + áudio de boas-vindas
   useEffect(() => {
-    // Initial text message from model
-    setTimeout(() => {
+    // Mensagem de texto inicial
+    const textTimer = setTimeout(() => {
       setMessages([{
         id: 1,
         content: `Oi gatinho! 💋 Vi que você curtiu meu perfil... Sou a ${profile.name}, prazer em te conhecer aqui! ❤️`,
@@ -101,17 +132,11 @@ const Chat = () => {
       }]);
     }, 1000);
 
-    // Send audio message after initial text
-    setTimeout(() => {
-      const audioMessage: Message = {
-        id: 2,
-        content: "Escuta essa mensagem que eu gravei especialmente pra você... 🎧💕",
-        isUser: false,
-        timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        isAudio: true,
-        audioSrc: getRandomAudio(),
-      };
-      setMessages((prev) => [...prev, audioMessage]);
+    // Áudio de boas-vindas (audio1.mp3) - enviado automaticamente
+    const audioTimer = setTimeout(() => {
+      if (!hasSentStartAudio) {
+        sendCoroaAudio('start');
+      }
     }, 3500);
 
     // Show gift notification after some time
@@ -119,8 +144,12 @@ const Chat = () => {
       setShowGiftNotification(true);
     }, 20000);
 
-    return () => clearTimeout(giftTimer);
-  }, [profile.name]);
+    return () => {
+      clearTimeout(textTimer);
+      clearTimeout(audioTimer);
+      clearTimeout(giftTimer);
+    };
+  }, [profile.name, hasSentStartAudio, sendCoroaAudio]);
 
   const sendMessage = () => {
     if (!inputValue.trim()) return;
@@ -131,7 +160,7 @@ const Chat = () => {
     }
 
     const userMessage: Message = {
-      id: messages.length + 1,
+      id: Date.now(),
       content: inputValue,
       isUser: true,
       timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -139,13 +168,17 @@ const Chat = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
-    setMessagesUsed((prev) => prev + 1);
+    const newMessagesUsed = messagesUsed + 1;
+    setMessagesUsed(newMessagesUsed);
     
     // Registra mensagem no tracker
     LeadTracker.incrementMessages();
 
+    // Verifica se é a última mensagem do lead (fim da conversa)
+    const isLastMessage = !isVip && newMessagesUsed >= MAX_MESSAGES;
+
     // Show VIP popup when messages run out, then show insistent popup
-    if (!isVip && messagesUsed + 1 >= MAX_MESSAGES) {
+    if (isLastMessage) {
       setTimeout(() => {
         setShowVipPlans(true);
       }, 3000);
@@ -153,6 +186,7 @@ const Chat = () => {
       // Show insistent popup after VIP plans is closed
       setTimeout(() => {
         if (!isVip) {
+          setInsistentTrigger("chat_end");
           setShowInsistentPopup(true);
         }
       }, 10000);
@@ -164,24 +198,14 @@ const Chat = () => {
     setTimeout(() => {
       setIsTyping(false);
       
-      // 30% chance to send audio message instead of text
-      const sendAudio = Math.random() < 0.3;
-      
-      if (sendAudio) {
-        const randomAudioText = audioMessages[Math.floor(Math.random() * audioMessages.length)];
-        const audioMessage: Message = {
-          id: messages.length + 2,
-          content: randomAudioText,
-          isUser: false,
-          timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-          isAudio: true,
-          audioSrc: getRandomAudio(),
-        };
-        setMessages((prev) => [...prev, audioMessage]);
+      // Se é a última mensagem, envia o áudio de despedida (audio2.mp3)
+      if (isLastMessage && !hasSentEndAudio) {
+        sendCoroaAudio('end');
       } else {
+        // Resposta normal da coroa (texto)
         const randomResponse = modelResponses[Math.floor(Math.random() * modelResponses.length)];
         const modelMessage: Message = {
-          id: messages.length + 2,
+          id: Date.now() + 1,
           content: randomResponse,
           isUser: false,
           timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
