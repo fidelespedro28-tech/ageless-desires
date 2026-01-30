@@ -10,6 +10,7 @@ import InsistentPremiumPopup from "@/components/InsistentPremiumPopup";
 import { LeadTracker } from "@/lib/leadTracker";
 import { useBalance } from "@/hooks/useBalance";
 import { useLikesLimit } from "@/hooks/useLikesLimit";
+import { useChatMessages } from "@/hooks/useChatMessages";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, Mic, DollarSign, Crown } from "lucide-react";
@@ -29,17 +30,6 @@ interface Message {
 // Áudios específicos das coroas (em ordem)
 const AUDIO_START = "/audios/audio1.mp3"; // Áudio de boas-vindas (12s)
 const AUDIO_END = "/audios/audio2.mp3";   // Áudio de despedida/final
-const AUDIO_CASH = "/audios/audio-cash.mp3"; // Áudio do PIX
-
-const modelResponses = [
-  "Oi amor! Que bom te conhecer aqui 💋",
-  "Você parece interessante... Me conta mais sobre você?",
-  "Adoro homens mais jovens... vocês são tão cheios de energia 😏",
-  "Sabia que eu adoro presentear quem me trata bem? 🎁",
-  "Que tal a gente se conhecer melhor? Estou online agora...",
-  "Você me deixou curiosa... O que você está procurando aqui?",
-  "Hmm, gostei de você! Vou te enviar um presentinho 💕"
-];
 
 const MAX_MESSAGES = 4;
 
@@ -63,11 +53,20 @@ const Chat = () => {
   const [showInsistentPopup, setShowInsistentPopup] = useState(false);
   const [insistentTrigger, setInsistentTrigger] = useState<"likes_complete" | "chat_end" | "matches_return" | "new_chat" | "general">("chat_end");
   const [isTyping, setIsTyping] = useState(false);
-  const [messagesUsed, setMessagesUsed] = useState(0);
+  const [userMessagesCount, setUserMessagesCount] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
   
-  // Controle de áudios automáticos (evita repetição)
-  const [hasSentStartAudio, setHasSentStartAudio] = useState(false);
-  const [hasSentEndAudio, setHasSentEndAudio] = useState(false);
+  // Sistema de mensagens inteligente
+  const {
+    getOpeningMessage,
+    getResponseForMessage,
+    markIntroAudioSent,
+    markFinalAudioSent,
+    shouldSendIntroAudio,
+    shouldSendFinalAudio,
+    audioIntroSent,
+    audioFinalSent,
+  } = useChatMessages(profile.name);
   
   // Likes/Premium limit hook
   const { isPremium, enterPremiumMode } = useLikesLimit();
@@ -88,12 +87,12 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Verifica se é o fim da conversa
-  const isEndOfConversation = useCallback(() => {
-    return !isVip && messagesUsed >= MAX_MESSAGES - 1;
-  }, [isVip, messagesUsed]);
+  // Função para obter timestamp atual
+  const getCurrentTimestamp = () => {
+    return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
 
-  // Envia áudio automático da coroa
+  // Enviar áudio da coroa
   const sendCoroaAudio = useCallback((audioType: 'start' | 'end') => {
     const audioSrc = audioType === 'start' ? AUDIO_START : AUDIO_END;
     const messageText = audioType === 'start' 
@@ -104,7 +103,7 @@ const Chat = () => {
       id: Date.now(),
       content: messageText,
       isUser: false,
-      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: getCurrentTimestamp(),
       isAudio: true,
       audioSrc: audioSrc,
     };
@@ -112,29 +111,33 @@ const Chat = () => {
     setMessages((prev) => [...prev, audioMessage]);
     
     if (audioType === 'start') {
-      setHasSentStartAudio(true);
+      markIntroAudioSent();
     } else {
-      setHasSentEndAudio(true);
+      markFinalAudioSent();
     }
     
-    console.log(`🎵 Áudio ${audioType} enviado automaticamente`);
-  }, []);
+    console.log(`🎵 Áudio ${audioType} enviado`);
+  }, [markIntroAudioSent, markFinalAudioSent]);
 
   // Inicialização do chat - mensagem de texto + áudio de boas-vindas
   useEffect(() => {
-    // Mensagem de texto inicial
+    if (isInitialized) return;
+    
+    // Mensagem de texto inicial (única e não repetida)
     const textTimer = setTimeout(() => {
+      const openingMessage = getOpeningMessage();
       setMessages([{
         id: 1,
-        content: `Oi gatinho! 💋 Vi que você curtiu meu perfil... Sou a ${profile.name}, prazer em te conhecer aqui! ❤️`,
+        content: openingMessage,
         isUser: false,
         timestamp: "Agora"
       }]);
+      setIsInitialized(true);
     }, 1000);
 
-    // Áudio de boas-vindas (audio1.mp3) - enviado automaticamente
+    // Áudio de boas-vindas - enviado apenas se ainda não foi enviado
     const audioTimer = setTimeout(() => {
-      if (!hasSentStartAudio) {
+      if (shouldSendIntroAudio()) {
         sendCoroaAudio('start');
       }
     }, 3500);
@@ -149,12 +152,12 @@ const Chat = () => {
       clearTimeout(audioTimer);
       clearTimeout(giftTimer);
     };
-  }, [profile.name, hasSentStartAudio, sendCoroaAudio]);
+  }, [isInitialized, getOpeningMessage, shouldSendIntroAudio, sendCoroaAudio]);
 
   const sendMessage = () => {
     if (!inputValue.trim()) return;
 
-    if (!isVip && messagesUsed >= MAX_MESSAGES) {
+    if (!isVip && userMessagesCount >= MAX_MESSAGES) {
       setShowVipPlans(true);
       return;
     }
@@ -163,56 +166,72 @@ const Chat = () => {
       id: Date.now(),
       content: inputValue,
       isUser: true,
-      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      timestamp: getCurrentTimestamp()
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
-    const newMessagesUsed = messagesUsed + 1;
-    setMessagesUsed(newMessagesUsed);
+    const newMessagesCount = userMessagesCount + 1;
+    setUserMessagesCount(newMessagesCount);
     
     // Registra mensagem no tracker
     LeadTracker.incrementMessages();
 
     // Verifica se é a última mensagem do lead (fim da conversa)
-    const isLastMessage = !isVip && newMessagesUsed >= MAX_MESSAGES;
+    const isLastMessage = !isVip && newMessagesCount >= MAX_MESSAGES;
 
-    // Show VIP popup when messages run out, then show insistent popup
+    // Show VIP popup when messages run out
     if (isLastMessage) {
       setTimeout(() => {
         setShowVipPlans(true);
-      }, 3000);
+      }, 4000);
       
-      // Show insistent popup after VIP plans is closed
+      // Show insistent popup after VIP plans
       setTimeout(() => {
         if (!isVip) {
           setInsistentTrigger("chat_end");
           setShowInsistentPopup(true);
         }
-      }, 10000);
+      }, 12000);
     }
 
     // Simulate typing
     setIsTyping(true);
     
+    // Delay natural entre 2 e 4 segundos
+    const typingDelay = 2000 + Math.random() * 2000;
+    
     setTimeout(() => {
       setIsTyping(false);
       
-      // Se é a última mensagem, envia o áudio de despedida (audio2.mp3)
-      if (isLastMessage && !hasSentEndAudio) {
-        sendCoroaAudio('end');
+      // Verificar se deve enviar áudio final (após 3ª mensagem do lead)
+      if (shouldSendFinalAudio(newMessagesCount) && !audioFinalSent) {
+        // Primeiro envia resposta de texto
+        const textResponse = getResponseForMessage(newMessagesCount);
+        const textMessage: Message = {
+          id: Date.now(),
+          content: textResponse,
+          isUser: false,
+          timestamp: getCurrentTimestamp()
+        };
+        setMessages((prev) => [...prev, textMessage]);
+        
+        // Depois de um delay, envia o áudio final
+        setTimeout(() => {
+          sendCoroaAudio('end');
+        }, 1500);
       } else {
-        // Resposta normal da coroa (texto)
-        const randomResponse = modelResponses[Math.floor(Math.random() * modelResponses.length)];
+        // Resposta normal da coroa (texto variado e único)
+        const responseText = getResponseForMessage(newMessagesCount);
         const modelMessage: Message = {
           id: Date.now() + 1,
-          content: randomResponse,
+          content: responseText,
           isUser: false,
-          timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          timestamp: getCurrentTimestamp()
         };
         setMessages((prev) => [...prev, modelMessage]);
       }
-    }, 2000 + Math.random() * 2000);
+    }, typingDelay);
   };
 
   const handleVipPurchase = (plan: string) => {
@@ -220,7 +239,7 @@ const Chat = () => {
     setShowInsistentPopup(false);
     enterPremiumMode();
     
-    // Registra compra no tracker (dispara Purchase)
+    // Registra compra no tracker
     const planValues: Record<string, number> = {
       plano1: 19.90,
       plano2: 37.90,
@@ -254,12 +273,12 @@ const Chat = () => {
       id: messages.length + 1,
       content: "Acabei de te enviar um presente especial! 🎁 Espero que você goste... Isso é só um começo do que posso fazer por você 💕",
       isUser: false,
-      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      timestamp: getCurrentTimestamp()
     };
     setMessages((prev) => [...prev, giftMessage]);
   };
 
-  const isInputDisabled = !isVip && messagesUsed >= MAX_MESSAGES;
+  const isInputDisabled = !isVip && userMessagesCount >= MAX_MESSAGES;
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col">
@@ -318,7 +337,7 @@ const Chat = () => {
               senderImage={profile.image}
               senderName={profile.name}
               timestamp={message.timestamp}
-              autoPlay={message.id === 2}
+              autoPlay={false}
             />
           ) : (
             <ChatMessage
@@ -422,7 +441,7 @@ const Chat = () => {
         onClose={() => setShowVipPlans(false)}
         onPurchase={handleVipPurchase}
         limitType="messages"
-        currentMessages={messagesUsed}
+        currentMessages={userMessagesCount}
       />
 
       {/* Insistent Premium Popup */}
