@@ -16,14 +16,17 @@ import { Heart, X, Crown, DollarSign, User, Lock, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-import helenaImg from "@/assets/models/helena.jpg";
-import julianaImg from "@/assets/models/juliana-new.jpg";
-import fernandaImg from "@/assets/models/fernanda.jpg";
-import patriciaImg from "@/assets/models/patricia.jpg";
-import carolinaImg from "@/assets/models/carolina.jpg";
-import adrianaImg from "@/assets/models/adriana.jpg";
-import renataImg from "@/assets/models/renata.png";
-import camilaImg from "@/assets/models/camila.png";
+// Novas imagens das coroas
+import silviaImg from "@/assets/models/silvia-2.jpg";
+import tatianaImg from "@/assets/models/tatiana-2.jpeg";
+import vanessaImg from "@/assets/models/vanessa-2.jpg";
+import raquelImg from "@/assets/models/raquel-2.jpeg";
+import luizaImg from "@/assets/models/luiza-2.jpg";
+import lucianaImg from "@/assets/models/luciana-2.jpg";
+import beatrizImg from "@/assets/models/beatriz.jpg";
+import marianaImg from "@/assets/models/mariana.jpg";
+import gabrielaImg from "@/assets/models/gabriela.png";
+import isabelaImg from "@/assets/models/isabela.png";
 
 interface Profile {
   id: number;
@@ -36,88 +39,111 @@ interface Profile {
   isVip: boolean;
 }
 
+// 10 perfis únicos de coroas (38-52 anos)
 const profiles: Profile[] = [
   {
     id: 1,
-    name: "Helena",
-    age: 43,
-    location: "a 8km de você",
-    description: "Elegante e sofisticada. Adoro vinhos, jantares e momentos especiais. Busco um homem que aprecie a vida.",
-    interests: ["Vinhos", "Gastronomia", "Viagens"],
-    image: helenaImg,
+    name: "Silvia",
+    age: 42,
+    location: "a 5km de você",
+    description: "Confiante, intensa e apaixonada por boas conversas e momentos únicos. Sei valorizar quem me trata bem.",
+    interests: ["Vinhos", "Viagens", "Jantares"],
+    image: silviaImg,
     isVip: true
   },
   {
     id: 2,
-    name: "Juliana",
-    age: 35,
+    name: "Tatiana",
+    age: 38,
     location: "a 3km de você",
-    description: "Empresária bem-sucedida buscando companhia jovem e interessante. Adoro presentear quem me trata bem 💋",
-    interests: ["Negócios", "Fitness", "Moda"],
-    image: julianaImg,
+    description: "Mulher decidida e elegante. Adoro moda, lifestyle e homens que sabem o que querem.",
+    interests: ["Moda", "Shopping", "Lifestyle"],
+    image: tatianaImg,
     isVip: true
   },
   {
     id: 3,
-    name: "Fernanda",
-    age: 38,
-    location: "a 12km de você",
-    description: "Mulher madura e experiente. Gosto de homens que sabem o que querem. Sou generosa com quem merece.",
-    interests: ["Arte", "Cinema", "Culinária"],
-    image: fernandaImg,
+    name: "Vanessa",
+    age: 40,
+    location: "a 8km de você",
+    description: "Sorriso fácil e energia contagiante. Gosto de cuidar de quem cuida de mim 💋",
+    interests: ["Fitness", "Praia", "Dança"],
+    image: vanessaImg,
     isVip: false
   },
   {
     id: 4,
-    name: "Patrícia",
-    age: 41,
-    location: "a 5km de você",
-    description: "Divorciada e livre. Quero aproveitar a vida com alguém especial. Adoro mimar meus matches.",
-    interests: ["Spa", "Shopping", "Jazz"],
-    image: patriciaImg,
+    name: "Raquel",
+    age: 45,
+    location: "a 2km de você",
+    description: "Sofisticada e misteriosa. Aprecio vinhos, eventos exclusivos e companhias interessantes.",
+    interests: ["Vinhos", "Eventos", "Luxo"],
+    image: raquelImg,
     isVip: true
   },
   {
     id: 5,
-    name: "Carolina",
-    age: 36,
-    location: "a 2km de você",
-    description: "Adoro dias de sol na piscina e homens atenciosos. Recompenso muito bem quem me faz sorrir 😘",
-    interests: ["Praia", "Fitness", "Viagens"],
-    image: carolinaImg,
+    name: "Luiza",
+    age: 39,
+    location: "a 4km de você",
+    description: "Empresária bem-sucedida buscando conexões genuínas. Adoro mimar quem me conquista.",
+    interests: ["Negócios", "Gastronomia", "Viagens"],
+    image: luizaImg,
     isVip: true
   },
   {
     id: 6,
-    name: "Adriana",
-    age: 34,
+    name: "Luciana",
+    age: 41,
     location: "a 6km de você",
-    description: "Amo natureza e vida saudável. Procuro alguém jovem e cheio de energia para me acompanhar.",
-    interests: ["Yoga", "Trilhas", "Saúde"],
-    image: adrianaImg,
-    isVip: false
+    description: "Alegre, sensual e cheia de vida. Gosto de festas, praia e momentos inesquecíveis.",
+    interests: ["Festas", "Praia", "Música"],
+    image: lucianaImg,
+    isVip: true
   },
   {
     id: 7,
-    name: "Renata",
-    age: 32,
-    location: "a 4km de você",
-    description: "Executiva bem-sucedida. Gosto de praias paradisíacas e homens que sabem tratar uma mulher.",
-    interests: ["Luxo", "Viagens", "Gastronomia"],
-    image: renataImg,
-    isVip: true
+    name: "Beatriz",
+    age: 43,
+    location: "a 7km de você",
+    description: "Espontânea e divertida. Adoro dias de sol, praia e homens com bom humor.",
+    interests: ["Praia", "Sol", "Aventura"],
+    image: beatrizImg,
+    isVip: false
   },
   {
     id: 8,
-    name: "Camila",
-    age: 37,
+    name: "Mariana",
+    age: 44,
     location: "a 1km de você",
-    description: "Elegante e misteriosa. Adoro mimar quem me conquista. Você pode ser o próximo sortudo.",
-    interests: ["Moda", "Arte", "Vinhos"],
-    image: camilaImg,
+    description: "Divorciada e livre. Quero aproveitar a vida com alguém especial. Recompenso bem quem merece.",
+    interests: ["Piscina", "Verão", "Relaxar"],
+    image: marianaImg,
+    isVip: true
+  },
+  {
+    id: 9,
+    name: "Gabriela",
+    age: 46,
+    location: "a 9km de você",
+    description: "Elegante e sedutora. Amo praias paradisíacas e homens que sabem tratar uma mulher.",
+    interests: ["Praia", "Viagens", "Natureza"],
+    image: gabrielaImg,
+    isVip: true
+  },
+  {
+    id: 10,
+    name: "Isabela",
+    age: 47,
+    location: "a 3km de você",
+    description: "Sofisticada e exigente. Busco conexões intensas com homens jovens e interessantes.",
+    interests: ["Luxo", "Moda", "Exclusividade"],
+    image: isabelaImg,
     isVip: true
   }
 ];
+
+const MATCH_AT = 5; // Match acontece EXATAMENTE na 5ª curtida
 
 const Descobrir = () => {
   const navigate = useNavigate();
@@ -125,7 +151,10 @@ const Descobrir = () => {
   // Persistent crown index hook - continues from where user left off
   const { currentIndex, setCurrentIndex } = useCrownIndex(profiles.length);
   
-  const [userName] = useState(() => localStorage.getItem("userName") || "Gabriel");
+  // User data from localStorage
+  const [userName] = useState(() => localStorage.getItem("userName") || "Visitante");
+  const [userPhoto] = useState(() => localStorage.getItem("userPhoto") || "");
+  
   const [showMatch, setShowMatch] = useState(false);
   const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -136,16 +165,15 @@ const Descobrir = () => {
   const [showInsistentPopup, setShowInsistentPopup] = useState(false);
   const [insistentTrigger, setInsistentTrigger] = useState<"likes_complete" | "chat_end" | "matches_return" | "new_chat" | "general">("general");
 
-  // Persistent balance hook - saldo consistente entre páginas
+  // Persistent balance hook
   const { balance, addBalance } = useBalance(0);
 
-  // Likes limit hook - controls free/premium interactions (5 likes grátis)
+  // Likes limit hook - 10 likes grátis, match só na 5ª
   const { 
     likesUsed,
     hasReachedLimit, 
     isPremium, 
     canLike,
-    canReceiveMatch, // Novo: só mostra match após 5 curtidas
     maxFreeLikes,
     registerLike, 
     enterPremiumMode,
@@ -163,7 +191,7 @@ const Descobrir = () => {
     }
   }, [hasReachedLimit, isPremium]);
 
-  // Show insistent popup when returning from matches/chat (for premium conversion)
+  // Show insistent popup when returning from matches/chat
   useEffect(() => {
     const lastPage = localStorage.getItem("lastVisitedPage");
     if (lastPage === "/chat" && !isPremium) {
@@ -190,7 +218,7 @@ const Descobrir = () => {
       return;
     }
 
-    // Calcula o novo contador ANTES de registrar (likesUsed ainda não foi incrementado)
+    // Calculate new count BEFORE registering
     const newLikesCount = likesUsed + 1;
 
     // Try to register like
@@ -200,10 +228,10 @@ const Descobrir = () => {
       return;
     }
     
-    // Registra like no tracker
+    // Track like
     LeadTracker.incrementLikes();
     
-    // Generate random reward between R$ 4,00 and R$ 9,90
+    // Generate random reward R$ 4,00 - R$ 9,90
     const reward = parseFloat((Math.random() * (9.90 - 4.00) + 4.00).toFixed(2));
     setPendingReward(reward);
     addBalance(reward);
@@ -211,12 +239,12 @@ const Descobrir = () => {
     // Show PIX reward popup
     setShowPixReward(true);
 
-    // Match só acontece após 5 curtidas (MIN_LIKES_FOR_MATCH)
-    // Para usuários FREE: match EXATAMENTE na 5ª curtida (newLikesCount === 5)
-    // Para usuários PREMIUM: match a cada 3 curtidas
+    // 🎯 LÓGICA DE MATCH:
+    // FREE: Match EXATAMENTE na 5ª curtida (não antes, não depois)
+    // PREMIUM: Match a cada 3 curtidas
     const shouldMatch = isPremium 
       ? newLikesCount % 3 === 0 
-      : newLikesCount === maxFreeLikes; // Match exatamente na 5ª curtida
+      : newLikesCount === MATCH_AT;
     
     if (shouldMatch) {
       setMatchedProfile(currentProfile);
@@ -227,7 +255,7 @@ const Descobrir = () => {
     // Advance to next crown (persisted)
     setCurrentIndex(currentIndex + 1);
 
-    // Check if reached limit after this like - show popup
+    // Check if reached limit (10 likes) - show premium popup
     if (!isPremium && newLikesCount >= maxFreeLikes) {
       setTimeout(() => {
         setInsistentTrigger("likes_complete");
@@ -235,7 +263,7 @@ const Descobrir = () => {
       }, 1500);
     }
 
-    // Check if all profiles viewed (show insistent popup for premium users too)
+    // Check if all profiles viewed
     if (currentIndex + 1 >= profiles.length) {
       setTimeout(() => {
         setInsistentTrigger("likes_complete");
@@ -247,7 +275,7 @@ const Descobrir = () => {
   const handlePixRewardContinue = () => {
     setShowPixReward(false);
     
-    // Se temos um matchedProfile pendente, mostra o popup de match
+    // Show match popup if there's a pending match
     if (matchedProfile) {
       setTimeout(() => setShowMatch(true), 300);
     }
@@ -269,7 +297,7 @@ const Descobrir = () => {
     setShowInsistentPopup(false);
     enterPremiumMode();
     
-    // Registra compra no tracker (dispara Purchase)
+    // Track purchase
     const planValues: Record<string, number> = {
       plano1: 19.90,
       plano2: 37.90,
@@ -285,6 +313,7 @@ const Descobrir = () => {
 
   const handleMatchClose = () => {
     setShowMatch(false);
+    setMatchedProfile(null);
     // If free user reached limit, show VIP popup
     if (hasReachedLimit && !isPremium) {
       setTimeout(() => setShowVipPlans(true), 300);
@@ -313,10 +342,21 @@ const Descobrir = () => {
         {/* Header */}
         <header className="relative z-20 flex items-center justify-between p-3 sm:p-4 bg-card/80 backdrop-blur-sm border-b border-border safe-area-top">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-              <User className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+            {/* User Avatar with gradient border */}
+            <div className="relative w-9 h-9 sm:w-11 sm:h-11 rounded-full p-[2px] bg-gradient-to-r from-primary via-secondary to-primary">
+              {userPhoto ? (
+                <img 
+                  src={userPhoto} 
+                  alt={userName}
+                  className="w-full h-full rounded-full object-cover border-2 border-background"
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center border-2 border-background">
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+                </div>
+              )}
             </div>
-            <span className="font-medium text-foreground text-sm sm:text-base">{userName}</span>
+            <span className="font-medium text-foreground text-sm sm:text-base truncate max-w-[80px] sm:max-w-none">{userName}</span>
           </div>
           <div className="flex items-center gap-1 bg-success/20 text-success px-2 sm:px-3 py-1 sm:py-1.5 rounded-full">
             <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -381,37 +421,48 @@ const Descobrir = () => {
     <div className="min-h-screen relative overflow-hidden pb-16">
       <BackgroundGrid useImage />
 
-      {/* Header - Mobile optimized */}
+      {/* Header - Mobile optimized with user avatar */}
       <header className="relative z-20 flex items-center justify-between p-3 sm:p-4 bg-card/80 backdrop-blur-sm border-b border-border safe-area-top">
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* User Avatar with gradient border */}
           <button 
             onClick={() => setShowEditProfile(true)}
-            className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center group"
+            className="relative w-9 h-9 sm:w-11 sm:h-11 rounded-full p-[2px] bg-gradient-to-r from-primary via-secondary to-primary group"
           >
-            <User className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+            {userPhoto ? (
+              <img 
+                src={userPhoto} 
+                alt={userName}
+                className="w-full h-full rounded-full object-cover border-2 border-background"
+              />
+            ) : (
+              <div className="w-full h-full rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center border-2 border-background">
+                <User className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+              </div>
+            )}
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-card border border-border rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <Edit className="w-2.5 h-2.5 text-primary" />
             </div>
           </button>
-          <span className="font-medium text-foreground text-sm sm:text-base truncate max-w-[80px] sm:max-w-none">{userName}</span>
+          <span className="font-medium text-foreground text-sm sm:text-base truncate max-w-[70px] sm:max-w-none">{userName}</span>
           {isPremium && (
             <span className="bg-gradient-to-r from-gold to-amber-500 text-background text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-              <Crown className="w-3 h-3" /> PREMIUM
+              <Crown className="w-3 h-3" /> VIP
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Balance */}
           <div className="flex items-center gap-1 bg-success/20 text-success px-2 sm:px-3 py-1 sm:py-1.5 rounded-full">
             <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="font-semibold text-xs sm:text-base">R${balance.toFixed(2)}</span>
+            <span className="font-semibold text-xs sm:text-sm">R${balance.toFixed(2)}</span>
           </div>
 
-          {/* Likes counter for free users */}
+          {/* Likes counter - 💖 0/10 */}
           {!isPremium && (
             <div className="flex items-center gap-1 bg-primary/20 text-primary px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs">
-              <Heart className="w-3 h-3 fill-primary" />
+              <Heart className="w-3 h-3 sm:w-4 sm:h-4 fill-primary" />
               <span className="font-semibold">{likesUsed}/{maxFreeLikes}</span>
             </div>
           )}

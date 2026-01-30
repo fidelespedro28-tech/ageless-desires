@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 
 const LIKES_LIMIT_KEY = "likesLimitData";
-const MIN_LIKES_FOR_MATCH = 5; // Mínimo de curtidas para liberar match
+const MIN_LIKES_FOR_MATCH = 5; // Match acontece EXATAMENTE na 5ª curtida
 
 interface LikesLimitData {
   likesUsed: number;
@@ -28,7 +28,7 @@ interface UseLikesLimitReturn {
   resetLikesLimit: () => void;
 }
 
-const MAX_FREE_LIKES = 5;
+const MAX_FREE_LIKES = 10; // 10 curtidas grátis, match só na 5ª
 
 const getInitialData = (): LikesLimitData => {
   try {
