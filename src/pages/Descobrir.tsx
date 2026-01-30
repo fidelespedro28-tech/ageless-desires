@@ -144,7 +144,8 @@ const Descobrir = () => {
     likesUsed,
     hasReachedLimit, 
     isPremium, 
-    canLike, 
+    canLike,
+    canReceiveMatch, // Novo: só mostra match após 5 curtidas
     maxFreeLikes,
     registerLike, 
     enterPremiumMode,
@@ -207,13 +208,19 @@ const Descobrir = () => {
     // Show PIX reward popup
     setShowPixReward(true);
 
-    // Match happens on first like, or every 3 likes for premium
+    // Match só acontece após 5 curtidas (MIN_LIKES_FOR_MATCH)
     const newLikesCount = likesUsed + 1;
-    const shouldMatch = isPremium ? newLikesCount % 3 === 0 : newLikesCount === 1;
+    
+    // Para usuários FREE: match só na 5ª curtida (quando atinge o mínimo)
+    // Para usuários PREMIUM: match a cada 3 curtidas
+    const shouldMatch = isPremium 
+      ? newLikesCount % 3 === 0 
+      : newLikesCount === maxFreeLikes; // Match exatamente na 5ª curtida
     
     if (shouldMatch) {
       setMatchedProfile(currentProfile);
       LeadTracker.registerMatch(currentProfile.name);
+      console.log(`🎯 Match liberado na curtida ${newLikesCount}!`);
     }
 
     // Advance to next crown (persisted)
@@ -239,10 +246,14 @@ const Descobrir = () => {
   const handlePixRewardContinue = () => {
     setShowPixReward(false);
     
-    // Check if there's a pending match
-    const newLikesCount = likesUsed;
-    const shouldMatch = isPremium ? newLikesCount % 3 === 0 : newLikesCount === 1;
-    if (matchedProfile && shouldMatch) {
+    // Check if there's a pending match (só mostra após 5 curtidas)
+    // Para FREE: match exatamente na 5ª curtida
+    // Para PREMIUM: match a cada 3 curtidas
+    const shouldShowMatch = isPremium 
+      ? likesUsed % 3 === 0 
+      : likesUsed === maxFreeLikes;
+      
+    if (matchedProfile && shouldShowMatch) {
       setTimeout(() => setShowMatch(true), 300);
     }
   };
