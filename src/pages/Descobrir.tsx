@@ -190,6 +190,9 @@ const Descobrir = () => {
       return;
     }
 
+    // Calcula o novo contador ANTES de registrar (likesUsed ainda não foi incrementado)
+    const newLikesCount = likesUsed + 1;
+
     // Try to register like
     const registered = registerLike();
     if (!registered) {
@@ -209,9 +212,7 @@ const Descobrir = () => {
     setShowPixReward(true);
 
     // Match só acontece após 5 curtidas (MIN_LIKES_FOR_MATCH)
-    const newLikesCount = likesUsed + 1;
-    
-    // Para usuários FREE: match só na 5ª curtida (quando atinge o mínimo)
+    // Para usuários FREE: match EXATAMENTE na 5ª curtida (newLikesCount === 5)
     // Para usuários PREMIUM: match a cada 3 curtidas
     const shouldMatch = isPremium 
       ? newLikesCount % 3 === 0 
@@ -246,14 +247,8 @@ const Descobrir = () => {
   const handlePixRewardContinue = () => {
     setShowPixReward(false);
     
-    // Check if there's a pending match (só mostra após 5 curtidas)
-    // Para FREE: match exatamente na 5ª curtida
-    // Para PREMIUM: match a cada 3 curtidas
-    const shouldShowMatch = isPremium 
-      ? likesUsed % 3 === 0 
-      : likesUsed === maxFreeLikes;
-      
-    if (matchedProfile && shouldShowMatch) {
+    // Se temos um matchedProfile pendente, mostra o popup de match
+    if (matchedProfile) {
       setTimeout(() => setShowMatch(true), 300);
     }
   };
