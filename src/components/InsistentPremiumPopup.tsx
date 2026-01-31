@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Crown, Zap, Heart, Lock, Star, X, Diamond, Check, Flame } from "lucide-react";
 import { PLANS_ARRAY, PlanKey, CHECKOUT_LINKS } from "@/lib/checkoutLinks";
+import { LeadTracker } from "@/lib/leadTracker";
 import crownPopupImg from "@/assets/icons/crown-popup.png";
 
 interface InsistentPremiumPopupProps {
@@ -83,12 +84,32 @@ const InsistentPremiumPopup = ({
 
   const handleUpgradeClick = () => {
     // Salvar estado antes de abrir checkout (para retornar ao popup depois)
+    // IMPORTANTE: Isso garante que ao voltar do checkout, o popup reaparece
     localStorage.setItem("lastPopup", "insistentPremium");
     localStorage.setItem("returnFromCheckout", "true");
     
+    console.log("🛒 InsistentPopup: Abrindo checkout, salvando estado para retorno");
+    
+    // Dispara evento InitiateCheckout para Facebook Pixel
+    const planValue = {
+      plano1: 19.90,
+      plano2: 37.90,
+      plano3: 47.90,
+      plano4: 97.00
+    }[selectedPlan] || 37.90;
+    
+    LeadTracker.triggerFacebookEvent("InitiateCheckout", {
+      content_name: CHECKOUT_LINKS[selectedPlan].name,
+      content_type: "vip_plan",
+      value: planValue,
+      currency: "BRL",
+    });
+    
     // Abre o link de checkout no navegador (SEM som)
     window.open(CHECKOUT_LINKS[selectedPlan].url, "_blank");
-    onUpgrade();
+    
+    // NÃO chamar onUpgrade aqui - só quando realmente comprar
+    // onUpgrade fecha o popup e ativa premium, mas o usuário ainda não pagou
   };
 
   const planIcons: Record<PlanKey, typeof Star> = {

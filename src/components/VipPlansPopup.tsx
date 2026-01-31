@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Crown, Check, Clock, Shield, Zap, Star, Lock, Eye, MessageCircle, Heart, Flame, Diamond } from "lucide-react";
 import { CHECKOUT_LINKS, PLANS_ARRAY, PlanKey } from "@/lib/checkoutLinks";
+import { LeadTracker } from "@/lib/leadTracker";
 import crownIcon from "@/assets/crown-icon.png";
 
 interface VipPlansPopupProps {
@@ -72,12 +73,32 @@ const VipPlansPopup = ({
 
   const handlePurchase = () => {
     // Salvar estado antes de abrir checkout (para retornar ao popup depois)
+    // IMPORTANTE: Isso garante que ao voltar do checkout, o popup reaparece
     localStorage.setItem("lastPopup", "vipPlans");
     localStorage.setItem("returnFromCheckout", "true");
     
+    console.log("🛒 VipPlansPopup: Abrindo checkout, salvando estado para retorno");
+    
+    // Dispara evento InitiateCheckout para Facebook Pixel
+    const planValue = {
+      plano1: 19.90,
+      plano2: 37.90,
+      plano3: 47.90,
+      plano4: 97.00
+    }[selectedPlan] || 37.90;
+    
+    LeadTracker.triggerFacebookEvent("InitiateCheckout", {
+      content_name: CHECKOUT_LINKS[selectedPlan].name,
+      content_type: "vip_plan",
+      value: planValue,
+      currency: "BRL",
+    });
+    
     // Open checkout link (SEM som de dinheiro nos popups)
     window.open(CHECKOUT_LINKS[selectedPlan].url, "_blank");
-    onPurchase(selectedPlan);
+    
+    // NÃO chamar onPurchase aqui - só quando realmente comprar
+    // onPurchase fecha o popup e ativa premium, mas o usuário ainda não pagou
   };
 
   const getLimitTitle = () => {
