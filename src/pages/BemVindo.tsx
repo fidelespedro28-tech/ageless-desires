@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BackgroundGrid from "@/components/BackgroundGrid";
+import { saveNavigationState } from "@/hooks/useNavigationState";
 import { Check, Crown, Gift, Heart, Star } from "lucide-react";
 
 const BemVindo = () => {
@@ -12,6 +13,9 @@ const BemVindo = () => {
   useEffect(() => {
     const storedName = localStorage.getItem("userName");
     if (storedName) setUserName(storedName);
+
+    // 🔄 Salvar estado de navegação
+    saveNavigationState({ currentPage: "/bem-vindo" });
 
     // Simulate loading
     const timer = setTimeout(() => {

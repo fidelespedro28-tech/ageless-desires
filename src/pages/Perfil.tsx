@@ -1,10 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import BackgroundGrid from "@/components/BackgroundGrid";
 import Logo from "@/components/Logo";
 import { LeadTracker } from "@/lib/leadTracker";
+import { saveNavigationState } from "@/hooks/useNavigationState";
 import { 
   ArrowLeft, 
   Camera, 
@@ -53,6 +54,11 @@ const Perfil = () => {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+
+  // 🔄 Salvar estado de navegação
+  useEffect(() => {
+    saveNavigationState({ currentPage: "/perfil" });
+  }, []);
 
   // Manipula upload de foto
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
