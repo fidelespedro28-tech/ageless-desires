@@ -65,6 +65,7 @@ interface ChatState {
   usedResponses: { [key: number]: number[] };
   audioIntroSent: boolean;
   audioFinalSent: boolean;
+  giftSent: boolean; // Flag para presente PIX enviado apenas uma vez
   messagesCount: number;
   savedMessages: Array<{
     id: number;
@@ -74,7 +75,7 @@ interface ChatState {
     isAudio?: boolean;
     audioSrc?: string;
   }>;
-  introAudioTriggered: boolean; // Flag extra para garantir disparo único
+  introAudioTriggered: boolean;
 }
 
 const CHAT_STATE_KEY = "chatConversationState";
@@ -84,6 +85,7 @@ const getInitialState = (): ChatState => ({
   usedResponses: { 1: [], 2: [], 3: [], 4: [] },
   audioIntroSent: false,
   audioFinalSent: false,
+  giftSent: false,
   messagesCount: 0,
   savedMessages: [],
   introAudioTriggered: false,
@@ -245,6 +247,17 @@ export const useChatMessages = (profileName: string) => {
     setState(getInitialState());
   }, []);
 
+  // Verificar se deve enviar presente (após 2ª mensagem)
+  const shouldSendGift = useCallback((currentMessageCount: number): boolean => {
+    return currentMessageCount === 2 && !state.giftSent;
+  }, [state.giftSent]);
+
+  // Marcar presente como enviado
+  const markGiftSent = useCallback(() => {
+    setState((prev) => ({ ...prev, giftSent: true }));
+    console.log("🎁 Presente PIX marcado como enviado");
+  }, []);
+
   return {
     getOpeningMessage,
     getResponseForMessage,
@@ -252,6 +265,8 @@ export const useChatMessages = (profileName: string) => {
     markFinalAudioSent,
     shouldSendIntroAudio,
     shouldSendFinalAudio,
+    shouldSendGift,
+    markGiftSent,
     isConversationFinalized,
     resetConversation,
     saveMessages,
@@ -260,5 +275,6 @@ export const useChatMessages = (profileName: string) => {
     messagesCount: state.messagesCount,
     audioIntroSent: state.audioIntroSent,
     audioFinalSent: state.audioFinalSent,
+    giftSent: state.giftSent,
   };
 };
