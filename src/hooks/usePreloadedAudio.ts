@@ -61,9 +61,16 @@ export const playAudioInstant = (src: string, forceRestart = true): Promise<bool
 
 /**
  * Play cash sound instantly - no delay, preloaded
- * Use ONLY for:
- * - 5th like match
- * - R$40 PIX gift in chat
+ * 
+ * 🔊 CENÁRIOS CORRETOS PARA TOCAR O SOM:
+ * 1. Na 5ª curtida (match) em Descobrir.tsx
+ * 2. Ao clicar em "Resgatar Presente" no chat (handleClaimGift)
+ * 
+ * ❌ NÃO TOCAR em:
+ * - Popups de upgrade/planos
+ * - Mensagens automáticas do chat
+ * - Recarregamentos
+ * - Ao enviar o presente (só ao RESGATAR)
  */
 let cashPlayed = false;
 let cashPlayedTimestamp = 0;
@@ -72,16 +79,16 @@ const CASH_DEBOUNCE_MS = 2000; // Prevent duplicate plays within 2 seconds
 export const playCashSound = (): Promise<boolean> => {
   const now = Date.now();
   
-  // Debounce protection
+  // Debounce protection - evita toques duplicados
   if (cashPlayed && now - cashPlayedTimestamp < CASH_DEBOUNCE_MS) {
-    console.log("🔇 Cash sound debounced - already played recently");
+    console.log("🔇 Cash sound debounced - já tocou recentemente");
     return Promise.resolve(false);
   }
   
   cashPlayed = true;
   cashPlayedTimestamp = now;
   
-  console.log("💰 Playing cash sound INSTANTLY");
+  console.log("💰 Playing cash sound INSTANTANEAMENTE");
   return playAudioInstant(AUDIO_CASH);
 };
 
