@@ -196,23 +196,37 @@ const Descobrir = () => {
     enterPremiumMode,
   } = useLikesLimit();
 
-  // Hook para gerenciar retorno do checkout
-  const handleShowVipPlans = useCallback(() => setShowVipPlans(true), []);
-  const handleShowInsistent = useCallback(() => setShowInsistentPopup(true), []);
-  useCheckoutReturn(handleShowVipPlans, handleShowInsistent);
+  // Hook para gerenciar retorno do checkout - COM INTEGRAÇÃO DE DEVICE LOCK
+  const handleShowVipPlans = useCallback(() => {
+    console.log("📢 Exibindo VipPlansPopup");
+    setShowVipPlans(true);
+  }, []);
+  
+  const handleShowInsistent = useCallback(() => {
+    console.log("📢 Exibindo InsistentPremiumPopup");
+    setShowInsistentPopup(true);
+  }, []);
+  
+  const { shouldShowPopupImmediately } = useCheckoutReturn(handleShowVipPlans, handleShowInsistent);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
-  // 🔒 Verificar bloqueio por device ao carregar
+  // 🔒 Verificar bloqueio por device ao carregar - PRIORIDADE MÁXIMA
   useEffect(() => {
-    if (isLikesBlocked() && !isPremium) {
-      console.log("🔒 Device bloqueado - exibindo popup premium");
-      setShowVipPlans(true);
+    const isLocked = isLikesBlocked();
+    const shouldShowPopup = shouldShowPopupImmediately();
+    
+    if ((isLocked || shouldShowPopup) && !isPremium) {
+      console.log("🔒 Device bloqueado ou retornando do checkout - exibindo popup premium");
+      // Delay pequeno para garantir que a UI carregou
+      setTimeout(() => {
+        setShowVipPlans(true);
+      }, 500);
     }
-  }, [isLikesBlocked, isPremium]);
+  }, [isLikesBlocked, isPremium, shouldShowPopupImmediately]);
 
   // Show premium popup immediately if user already reached limit (page reload)
   useEffect(() => {
@@ -224,13 +238,17 @@ const Descobrir = () => {
   // Show insistent popup when returning from matches/chat
   useEffect(() => {
     const lastPage = localStorage.getItem("lastVisitedPage");
-    if (lastPage === "/chat" && !isPremium) {
+    
+    // Não mostrar popup insistente se já está mostrando VIP plans
+    if (showVipPlans) return;
+    
+    if (lastPage === "/chat" && !isPremium && !isLikesBlocked()) {
       setTimeout(() => {
         setInsistentTrigger("chat_end");
         setShowInsistentPopup(true);
       }, 2000);
     }
-    if (lastPage === "/matches" && !isPremium) {
+    if (lastPage === "/matches" && !isPremium && !isLikesBlocked()) {
       setTimeout(() => {
         setInsistentTrigger("matches_return");
         setShowInsistentPopup(true);
@@ -239,7 +257,7 @@ const Descobrir = () => {
     // 🔄 Salvar estado de navegação
     localStorage.setItem("lastVisitedPage", "/descobrir");
     saveNavigationState({ currentPage: "/descobrir" });
-  }, [isPremium]);
+  }, [isPremium, showVipPlans, isLikesBlocked]);
 
   const currentProfile = profiles[currentIndex];
 

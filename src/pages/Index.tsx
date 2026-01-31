@@ -5,6 +5,8 @@ import BackgroundGrid from "@/components/BackgroundGrid";
 import Logo from "@/components/Logo";
 import VipPopup from "@/components/VipPopup";
 import { getNavigationState, saveNavigationState } from "@/hooks/useNavigationState";
+import { checkDeviceLocked } from "@/hooks/useDeviceLock";
+import { shouldRedirectToPopup } from "@/hooks/useCheckoutReturn";
 import { Crown, Heart, Gift, Shield, Users, Star } from "lucide-react";
 
 import helenaImg from "@/assets/models/helena.jpg";
@@ -20,8 +22,19 @@ const Index = () => {
   useEffect(() => {
     const userName = localStorage.getItem("userName");
     const navState = getNavigationState();
+    const isDeviceLocked = checkDeviceLocked();
+    const shouldShowPopup = shouldRedirectToPopup();
     
-    // Se o usuário já tem conta e estava em outra página, redirecionar
+    // PRIORIDADE 1: Se device está bloqueado ou retornando do checkout, ir para /descobrir
+    // O popup será exibido automaticamente lá
+    if (isDeviceLocked || shouldShowPopup) {
+      console.log("🔒 Device bloqueado ou retornando do checkout - redirecionando para descobrir");
+      setIsRedirecting(true);
+      navigate("/descobrir", { replace: true });
+      return;
+    }
+    
+    // PRIORIDADE 2: Se o usuário já tem conta e estava em outra página, redirecionar
     if (userName) {
       const validPages = ["/descobrir", "/chat", "/perfil"];
       const targetPage = navState.currentPage && validPages.includes(navState.currentPage) 
