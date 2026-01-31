@@ -78,7 +78,7 @@ export const playAudioInstant = (src: string): Promise<boolean> => {
  * - Ao ENVIAR o presente (só ao RESGATAR)
  */
 let lastCashPlayTime = 0;
-const CASH_DEBOUNCE_MS = 1500; // Debounce de 1.5s
+const CASH_DEBOUNCE_MS = 500; // Debounce de 0.5s - permite curtidas rápidas
 
 export const playCashSound = (): Promise<boolean> => {
   const now = Date.now();
