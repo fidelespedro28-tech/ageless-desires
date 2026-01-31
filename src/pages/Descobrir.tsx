@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import BackgroundGrid from "@/components/BackgroundGrid";
 import ProfileCard from "@/components/ProfileCard";
@@ -12,6 +12,7 @@ import { LeadTracker } from "@/lib/leadTracker";
 import { useLikesLimit } from "@/hooks/useLikesLimit";
 import { useBalance } from "@/hooks/useBalance";
 import { useCrownIndex } from "@/hooks/useCrownIndex";
+import { useCheckoutReturn } from "@/hooks/useCheckoutReturn";
 import { Heart, X, Crown, DollarSign, User, Lock, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -178,6 +179,11 @@ const Descobrir = () => {
     registerLike, 
     enterPremiumMode,
   } = useLikesLimit();
+
+  // Hook para gerenciar retorno do checkout
+  const handleShowVipPlans = useCallback(() => setShowVipPlans(true), []);
+  const handleShowInsistent = useCallback(() => setShowInsistentPopup(true), []);
+  useCheckoutReturn(handleShowVipPlans, handleShowInsistent);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000);

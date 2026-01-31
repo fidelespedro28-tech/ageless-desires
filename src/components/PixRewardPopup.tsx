@@ -34,7 +34,7 @@ const PixRewardPopup = ({ isOpen, onContinue }: PixRewardPopupProps) => {
       const randomMessage = incentiveMessages[Math.floor(Math.random() * incentiveMessages.length)];
       setMessage(randomMessage);
 
-      // Play cash sound
+      // Som de dinheiro só toca aqui (recompensa de curtida) - é o único lugar permitido
       if (audioRef.current) {
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(() => {});

@@ -82,7 +82,11 @@ const InsistentPremiumPopup = ({
   const content = getTriggerContent();
 
   const handleUpgradeClick = () => {
-    // Abre o link de checkout no navegador
+    // Salvar estado antes de abrir checkout (para retornar ao popup depois)
+    localStorage.setItem("lastPopup", "insistentPremium");
+    localStorage.setItem("returnFromCheckout", "true");
+    
+    // Abre o link de checkout no navegador (SEM som)
     window.open(CHECKOUT_LINKS[selectedPlan].url, "_blank");
     onUpgrade();
   };
