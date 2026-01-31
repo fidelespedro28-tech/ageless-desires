@@ -299,6 +299,9 @@ const Descobrir = () => {
     setPendingReward(reward);
     addBalance(reward);
     
+    // 🔊 SOM DE DINHEIRO - TOCA EM TODA CURTIDA QUE DÁ RECOMPENSA!
+    playCashSound();
+    
     // 🔒 Atualizar saldo persistente por device
     updateTotalBalance(balance + reward);
     
@@ -315,9 +318,7 @@ const Descobrir = () => {
     if (shouldMatch) {
       setMatchedProfile(currentProfile);
       LeadTracker.registerMatch(currentProfile.name);
-      
-      // 🔊 SOM DE DINHEIRO - APENAS na 5ª curtida (match) - instantâneo com debounce!
-      playCashSound();
+      // Som já tocou acima com a recompensa, não precisa duplicar aqui
       
       // 🔒 Marcar match recebido por device (nunca mais dará outro match free)
       if (!isPremium) {
