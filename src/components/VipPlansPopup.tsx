@@ -71,37 +71,37 @@ const VipPlansPopup = ({
   if (!isOpen) return null;
 
   const handlePurchase = () => {
-    // Play cash sound
-    const audio = new Audio('/audios/audio-cash.mp3');
-    audio.play().catch(() => {});
+    // Salvar estado antes de abrir checkout (para retornar ao popup depois)
+    localStorage.setItem("lastPopup", "vipPlans");
+    localStorage.setItem("returnFromCheckout", "true");
     
-    // Open checkout link
+    // Open checkout link (SEM som de dinheiro nos popups)
     window.open(CHECKOUT_LINKS[selectedPlan].url, "_blank");
     onPurchase(selectedPlan);
   };
 
   const getLimitTitle = () => {
     if (limitType === "likes") {
-      return "🔥 Você usou todas as curtidas grátis!";
+      return "🔥 Suas curtidas acabaram!";
     }
     if (limitType === "messages") {
-      return "💬 Limite de Mensagens Atingido!";
+      return "💬 Limite de Mensagens!";
     }
     if (limitType === "matches") {
-      return "💕 Continue conhecendo coroas!";
+      return "💕 Desbloqueie mais matches!";
     }
     return "👑 Acesse o Mundo VIP!";
   };
 
   const getLimitDescription = () => {
     if (limitType === "likes") {
-      return `Você já curtiu ${currentLikes} coroas incríveis! Para continuar descobrindo mais mulheres maduras e generosas, libere seu acesso VIP.`;
+      return `Você usou ${currentLikes} curtidas! Desbloqueie acesso ilimitado para continuar conhecendo coroas incríveis e receber mais PIX.`;
     }
     if (limitType === "messages") {
-      return `Você já enviou ${currentMessages} mensagens! Para continuar conversando sem limites e receber mais PIX, torne-se VIP.`;
+      return `Você enviou ${currentMessages} mensagens! Para continuar conversando e receber recompensas exclusivas, torne-se VIP agora.`;
     }
     if (limitType === "matches") {
-      return "Parabéns pelo seu primeiro match! 🎉 Para ter matches ilimitados e conhecer mais coroas incríveis, torne-se Premium agora.";
+      return "🎉 Parabéns pelo seu match! Para ter matches ilimitados e conhecer todas as coroas, libere seu acesso Premium.";
     }
     return "Desbloqueie todas as funcionalidades exclusivas e tenha acesso ilimitado às melhores coroas da plataforma.";
   };
@@ -120,25 +120,26 @@ const VipPlansPopup = ({
     plano4: { gradient: "from-gold via-yellow-500 to-amber-500", border: "border-gold/50", bg: "bg-gold/10" },
   };
 
+  // Benefícios únicos por plano (cada plano tem vantagens distintas)
   const planFeatures: Record<PlanKey, { icon: typeof Heart; text: string }[]> = {
     plano1: [
-      { icon: Heart, text: "Acesso ilimitado a perfis" },
+      { icon: Heart, text: "Curtidas ilimitadas" },
       { icon: MessageCircle, text: "Mensagens ilimitadas" },
     ],
     plano2: [
-      { icon: Heart, text: "Tudo do plano anterior" },
-      { icon: Eye, text: "Ver quem curtiu você" },
-      { icon: Shield, text: "Perfis verificados premium" },
+      { icon: Heart, text: "Tudo do Básico +" },
+      { icon: Eye, text: "Ver quem te curtiu" },
+      { icon: Shield, text: "Perfis verificados" },
     ],
     plano3: [
-      { icon: Crown, text: "Tudo do plano anterior" },
-      { icon: Lock, text: "Conteúdo exclusivo +18 🔞" },
+      { icon: Crown, text: "Tudo do Premium +" },
+      { icon: Lock, text: "Conteúdo exclusivo 🔞" },
       { icon: Zap, text: "Prioridade nos matches" },
     ],
     plano4: [
-      { icon: Diamond, text: "Tudo dos planos anteriores" },
-      { icon: Star, text: "Atendimento VIP exclusivo" },
-      { icon: Flame, text: "Destaque máximo no app" },
+      { icon: Diamond, text: "Acesso total ao app" },
+      { icon: Star, text: "Suporte VIP 24h" },
+      { icon: Flame, text: "Destaque máximo" },
     ],
   };
 

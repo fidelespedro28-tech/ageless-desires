@@ -1,48 +1,63 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 
-// Mensagens de abertura (nunca repetir)
+// Mensagens de abertura únicas por perfil (nunca repetir)
 const OPENING_MESSAGES = [
-  "Oi, gostei que você visitou meu perfil 😊 achei interessante seu jeito.",
-  "Olá! Vi que você curtiu meu perfil... fiquei feliz com isso 💕",
-  "Oi, amor! Que bom te conhecer por aqui 💋",
-  "Ei, você! Gostei do seu perfil... me conta mais sobre você?",
-  "Oi gatinho! Vi que deu match comigo... adorei 😊",
+  "Oi gato... adorei que você me curtiu 😘 já fiquei curiosa pra saber mais sobre você...",
+  "Hmm... você tem um charme diferente 💕 O que te chamou atenção em mim?",
+  "Oi amor! Vi que você deu match comigo... adorei seu perfil 😊 Me conta mais sobre você?",
+  "Olá gatinho! Gostei do que vi... você parece ser bem interessante 💋",
+  "Oi! Que bom que você apareceu... já estava querendo conhecer alguém como você 😏",
+  "Ei você! Gostei muito do seu perfil... parece que a gente pode se dar muito bem 💖",
+  "Oi amor, tudo bem? Adorei sua curtida... me fez querer saber mais sobre você...",
+  "Olá! Você parece ter um jeitinho diferente que eu gosto 😊 Vamos conversar?",
 ];
 
-// Respostas para a 1ª mensagem do lead
+// Respostas para a 1ª mensagem do lead (tom envolvente)
 const RESPONSE_SET_1 = [
-  "Gostei do que você disse, me conta mais 😊",
-  "Você parece ter uma energia muito boa...",
-  "Hmm, interessante! Continue, estou curiosa.",
-  "Adorei sua mensagem! Você sabe conversar bem.",
-  "Você me deixou curiosa agora... 💭",
+  "Hmm... você tem um jeito que me deixa curiosa 😏",
+  "Adorei seu estilo, viu? Você sabe conversar 👀",
+  "Me conta mais... tô adorando isso que você disse",
+  "Você é diferente, gosto disso 😘",
+  "Já fiquei imaginando a gente juntinhos...",
+  "Nossa, gostei muito do seu jeito de falar... 💕",
+  "Você me pegou de surpresa... de um jeito bom 😊",
+  "Mmm interessante... continue, tô prestando atenção...",
 ];
 
-// Respostas para a 2ª mensagem do lead
+// Respostas para a 2ª mensagem do lead (mais íntimo)
 const RESPONSE_SET_2 = [
-  "Conversar assim é bem mais interessante do que eu esperava...",
-  "Gosto quando a conversa flui naturalmente assim 💕",
-  "Você tem um jeito especial de se expressar...",
+  "Conversar assim é bem mais interessante do que eu esperava... 💋",
+  "Gosto quando a conversa flui naturalmente assim... 💕",
+  "Você tem um jeito especial de se expressar... me atrai muito",
   "Cada vez gosto mais de conversar com você 😏",
-  "Você é diferente dos outros que falam comigo aqui...",
+  "Você é diferente dos outros que falam comigo aqui... e eu gosto disso",
+  "Hmm... essa conversa tá me deixando curiosa pra te conhecer melhor...",
+  "Você sabe como prender a atenção de uma mulher, né? 😘",
+  "Tô aqui sorrindo por causa das suas mensagens... 💖",
 ];
 
-// Respostas para a 3ª mensagem do lead (antes do áudio final)
+// Respostas para a 3ª mensagem do lead (antes do áudio final - criar tensão)
 const RESPONSE_SET_3 = [
-  "Nossa, estou gostando muito dessa conversa...",
-  "Você sabe como prender a atenção de uma mulher 💋",
-  "Queria poder te conhecer melhor, sabe?",
+  "Nossa, estou gostando muito dessa conversa... você é especial 💋",
+  "Você sabe como fazer uma mulher madura se interessar de verdade...",
+  "Queria poder te conhecer melhor, sabe? De perto... 😏",
   "Você me faz querer continuar conversando por horas...",
-  "Estou aqui sorrindo com suas mensagens 😊",
+  "Estou aqui sorrindo com suas mensagens... você me conquistou 😊",
+  "Mmm... adorando cada palavra sua... continua me contando mais 💕",
+  "Você tem um efeito em mim que eu não esperava... gostei disso",
+  "A gente tem muita química, você não acha? 🔥",
 ];
 
-// Respostas para a 4ª mensagem do lead (final)
+// Respostas para a 4ª mensagem do lead (final - criar desejo de continuar)
 const RESPONSE_SET_4 = [
-  "Adorei nosso papo! Espero que a gente continue...",
-  "Foi tão bom conversar com você! Quero mais 💕",
-  "Você me conquistou com essa conversa...",
-  "Não quero parar de falar com você... 💋",
-  "Essa conversa foi especial pra mim...",
+  "Adorei nosso papo! Não quero que acabe por aqui... 💕",
+  "Foi tão bom conversar com você! Quero muito mais disso...",
+  "Você me conquistou completamente com essa conversa... 💋",
+  "Não quero parar de falar com você... preciso de mais...",
+  "Essa conversa foi especial pra mim... quero continuar...",
+  "Você é incrível, sabia? Quero te conhecer ainda mais... 😘",
+  "Hmm... tô com vontade de te contar mais coisas... pessoalmente 😏",
+  "Gostei tanto de você que não quero que isso acabe... 💖",
 ];
 
 interface ChatState {
@@ -51,48 +66,76 @@ interface ChatState {
   audioIntroSent: boolean;
   audioFinalSent: boolean;
   messagesCount: number;
+  savedMessages: Array<{
+    id: number;
+    content: string;
+    isUser: boolean;
+    timestamp: string;
+    isAudio?: boolean;
+    audioSrc?: string;
+  }>;
 }
 
 const CHAT_STATE_KEY = "chatConversationState";
+
+const getInitialState = (): ChatState => ({
+  usedOpeningIndex: -1,
+  usedResponses: { 1: [], 2: [], 3: [], 4: [] },
+  audioIntroSent: false,
+  audioFinalSent: false,
+  messagesCount: 0,
+  savedMessages: [],
+});
 
 export const useChatMessages = (profileName: string) => {
   const [state, setState] = useState<ChatState>(() => {
     const saved = localStorage.getItem(CHAT_STATE_KEY);
     if (saved) {
       try {
-        return JSON.parse(saved);
-      } catch {
+        const parsed = JSON.parse(saved);
+        // Ensure all required fields exist
         return {
-          usedOpeningIndex: -1,
-          usedResponses: { 1: [], 2: [], 3: [], 4: [] },
-          audioIntroSent: false,
-          audioFinalSent: false,
-          messagesCount: 0,
+          ...getInitialState(),
+          ...parsed,
         };
+      } catch {
+        return getInitialState();
       }
     }
-    return {
-      usedOpeningIndex: -1,
-      usedResponses: { 1: [], 2: [], 3: [], 4: [] },
-      audioIntroSent: false,
-      audioFinalSent: false,
-      messagesCount: 0,
-    };
+    return getInitialState();
   });
 
-  // Salvar estado no localStorage
+  // Salvar estado no localStorage sempre que mudar
   useEffect(() => {
     localStorage.setItem(CHAT_STATE_KEY, JSON.stringify(state));
   }, [state]);
 
+  // Salvar mensagens da conversa (persistência)
+  const saveMessages = useCallback((messages: ChatState['savedMessages']) => {
+    setState((prev) => ({
+      ...prev,
+      savedMessages: messages,
+    }));
+  }, []);
+
+  // Recuperar mensagens salvas
+  const getSavedMessages = useCallback(() => {
+    return state.savedMessages;
+  }, [state.savedMessages]);
+
+  // Verificar se já tem conversa salva
+  const hasSavedConversation = useCallback(() => {
+    return state.savedMessages.length > 0;
+  }, [state.savedMessages]);
+
   // Obter mensagem de abertura única
   const getOpeningMessage = useCallback((): string => {
-    if (state.usedOpeningIndex >= 0) {
+    if (state.usedOpeningIndex >= 0 && state.usedOpeningIndex < OPENING_MESSAGES.length) {
       // Já enviou abertura, retornar a mesma
-      return OPENING_MESSAGES[state.usedOpeningIndex].replace("meu perfil", `meu perfil... Sou a ${profileName}`);
+      return OPENING_MESSAGES[state.usedOpeningIndex].replace("{name}", profileName);
     }
 
-    // Escolher nova mensagem de abertura
+    // Escolher nova mensagem de abertura (não usada antes)
     const availableIndexes = OPENING_MESSAGES.map((_, i) => i).filter(
       (i) => i !== state.usedOpeningIndex
     );
@@ -100,10 +143,10 @@ export const useChatMessages = (profileName: string) => {
 
     setState((prev) => ({ ...prev, usedOpeningIndex: randomIndex }));
 
-    return OPENING_MESSAGES[randomIndex].replace("meu perfil", `meu perfil... Sou a ${profileName}`);
+    return OPENING_MESSAGES[randomIndex].replace("{name}", profileName);
   }, [state.usedOpeningIndex, profileName]);
 
-  // Obter resposta baseada no número da mensagem do lead
+  // Obter resposta baseada no número da mensagem do lead (com anti-repetição)
   const getResponseForMessage = useCallback((messageNumber: number): string => {
     let responseSet: string[];
     
@@ -128,7 +171,7 @@ export const useChatMessages = (profileName: string) => {
       (i) => !usedIndexes.includes(i)
     );
 
-    // Se todas foram usadas, resetar
+    // Se todas foram usadas, resetar para evitar mensagem vazia
     const indexPool = availableIndexes.length > 0 ? availableIndexes : responseSet.map((_, i) => i);
     const randomIndex = indexPool[Math.floor(Math.random() * indexPool.length)];
 
@@ -154,26 +197,20 @@ export const useChatMessages = (profileName: string) => {
     setState((prev) => ({ ...prev, audioFinalSent: true }));
   }, []);
 
-  // Verificar se deve enviar áudio de introdução
+  // Verificar se deve enviar áudio de introdução (apenas uma vez por conversa)
   const shouldSendIntroAudio = useCallback((): boolean => {
     return !state.audioIntroSent;
   }, [state.audioIntroSent]);
 
-  // Verificar se deve enviar áudio final (antes da 4ª mensagem, após a 3ª)
+  // Verificar se deve enviar áudio final (APÓS a 3ª mensagem, ANTES da 4ª)
   const shouldSendFinalAudio = useCallback((currentMessageCount: number): boolean => {
     return currentMessageCount === 3 && !state.audioFinalSent;
   }, [state.audioFinalSent]);
 
-  // Resetar conversa (para novo chat)
+  // Resetar conversa (para novo chat ou debugging)
   const resetConversation = useCallback(() => {
     localStorage.removeItem(CHAT_STATE_KEY);
-    setState({
-      usedOpeningIndex: -1,
-      usedResponses: { 1: [], 2: [], 3: [], 4: [] },
-      audioIntroSent: false,
-      audioFinalSent: false,
-      messagesCount: 0,
-    });
+    setState(getInitialState());
   }, []);
 
   return {
@@ -184,6 +221,9 @@ export const useChatMessages = (profileName: string) => {
     shouldSendIntroAudio,
     shouldSendFinalAudio,
     resetConversation,
+    saveMessages,
+    getSavedMessages,
+    hasSavedConversation,
     messagesCount: state.messagesCount,
     audioIntroSent: state.audioIntroSent,
     audioFinalSent: state.audioFinalSent,

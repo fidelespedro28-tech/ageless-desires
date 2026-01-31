@@ -27,9 +27,9 @@ interface Message {
   audioSrc?: string;
 }
 
-// Áudios específicos das coroas (em ordem)
+// Áudios específicos das coroas (SEM som de dinheiro)
 const AUDIO_START = "/audios/audio1.mp3"; // Áudio de boas-vindas (12s)
-const AUDIO_END = "/audios/audio2.mp3";   // Áudio de despedida/final
+const AUDIO_END = "/audios/audio2.mp3";   // Áudio de despedida/final (~20s)
 
 const MAX_MESSAGES = 4;
 
@@ -56,7 +56,7 @@ const Chat = () => {
   const [userMessagesCount, setUserMessagesCount] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
   
-  // Sistema de mensagens inteligente
+  // Sistema de mensagens inteligente com persistência
   const {
     getOpeningMessage,
     getResponseForMessage,
@@ -66,6 +66,9 @@ const Chat = () => {
     shouldSendFinalAudio,
     audioIntroSent,
     audioFinalSent,
+    saveMessages,
+    getSavedMessages,
+    hasSavedConversation,
   } = useChatMessages(profile.name);
   
   // Likes/Premium limit hook
@@ -87,12 +90,19 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Salvar mensagens sempre que mudarem
+  useEffect(() => {
+    if (messages.length > 0) {
+      saveMessages(messages);
+    }
+  }, [messages, saveMessages]);
+
   // Função para obter timestamp atual
   const getCurrentTimestamp = () => {
     return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Enviar áudio da coroa
+  // Enviar áudio da coroa (SEM som de dinheiro)
   const sendCoroaAudio = useCallback((audioType: 'start' | 'end') => {
     const audioSrc = audioType === 'start' ? AUDIO_START : AUDIO_END;
     const messageText = audioType === 'start' 
@@ -119,11 +129,25 @@ const Chat = () => {
     console.log(`🎵 Áudio ${audioType} enviado`);
   }, [markIntroAudioSent, markFinalAudioSent]);
 
-  // Inicialização do chat - mensagem de texto + áudio de boas-vindas
+  // Inicialização do chat - verificar conversas salvas OU começar nova
   useEffect(() => {
     if (isInitialized) return;
     
-    // Mensagem de texto inicial (única e não repetida)
+    // Verificar se tem conversa salva
+    if (hasSavedConversation()) {
+      const savedMessages = getSavedMessages();
+      if (savedMessages.length > 0) {
+        setMessages(savedMessages);
+        // Contar mensagens do usuário para controle de limite
+        const userMsgs = savedMessages.filter(m => m.isUser).length;
+        setUserMessagesCount(userMsgs);
+        setIsInitialized(true);
+        console.log("📩 Conversa restaurada:", savedMessages.length, "mensagens");
+        return;
+      }
+    }
+    
+    // Nova conversa - mensagem de texto inicial (única e não repetida)
     const textTimer = setTimeout(() => {
       const openingMessage = getOpeningMessage();
       setMessages([{
@@ -145,14 +169,14 @@ const Chat = () => {
     // Show gift notification after some time
     const giftTimer = setTimeout(() => {
       setShowGiftNotification(true);
-    }, 20000);
+    }, 25000);
 
     return () => {
       clearTimeout(textTimer);
       clearTimeout(audioTimer);
       clearTimeout(giftTimer);
     };
-  }, [isInitialized, getOpeningMessage, shouldSendIntroAudio, sendCoroaAudio]);
+  }, [isInitialized, getOpeningMessage, shouldSendIntroAudio, sendCoroaAudio, hasSavedConversation, getSavedMessages]);
 
   const sendMessage = () => {
     if (!inputValue.trim()) return;
@@ -195,16 +219,14 @@ const Chat = () => {
       }, 12000);
     }
 
-    // Simulate typing
+    // Simulate typing with natural delay (2-4 seconds)
     setIsTyping(true);
-    
-    // Delay natural entre 2 e 4 segundos
     const typingDelay = 2000 + Math.random() * 2000;
     
     setTimeout(() => {
       setIsTyping(false);
       
-      // Verificar se deve enviar áudio final (após 3ª mensagem do lead)
+      // Verificar se deve enviar áudio final (APÓS 3ª mensagem do lead)
       if (shouldSendFinalAudio(newMessagesCount) && !audioFinalSent) {
         // Primeiro envia resposta de texto
         const textResponse = getResponseForMessage(newMessagesCount);
@@ -235,6 +257,10 @@ const Chat = () => {
   };
 
   const handleVipPurchase = (plan: string) => {
+    // Salvar estado do popup antes de ir para checkout
+    localStorage.setItem("lastPopup", "vipPlans");
+    localStorage.setItem("returnFromCheckout", "true");
+    
     setShowVipPlans(false);
     setShowInsistentPopup(false);
     enterPremiumMode();
@@ -417,7 +443,7 @@ const Chat = () => {
         </div>
       </div>
 
-      {/* Gift Notification */}
+      {/* Gift Notification - SEM som de dinheiro */}
       <GiftNotification
         isOpen={showGiftNotification}
         senderName={profile.name}
@@ -425,7 +451,7 @@ const Chat = () => {
         onClose={() => setShowGiftNotification(false)}
       />
 
-      {/* Pix Popup */}
+      {/* Pix Popup - SEM som de dinheiro */}
       <PixPopup
         isOpen={showPixPopup}
         amount="R$50,00"
@@ -435,7 +461,7 @@ const Chat = () => {
         onClose={() => setShowPixPopup(false)}
       />
 
-      {/* VIP Plans Popup */}
+      {/* VIP Plans Popup - SEM som */}
       <VipPlansPopup
         isOpen={showVipPlans}
         onClose={() => setShowVipPlans(false)}
@@ -444,7 +470,7 @@ const Chat = () => {
         currentMessages={userMessagesCount}
       />
 
-      {/* Insistent Premium Popup */}
+      {/* Insistent Premium Popup - SEM som */}
       <InsistentPremiumPopup
         isOpen={showInsistentPopup}
         onClose={() => setShowInsistentPopup(false)}
