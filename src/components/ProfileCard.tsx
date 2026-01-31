@@ -25,7 +25,7 @@ const ProfileCard = ({
   onDislike,
 }: ProfileCardProps) => {
   return (
-    <div className="relative w-full max-w-[340px] sm:max-w-sm mx-auto aspect-[3/4] rounded-2xl overflow-hidden shadow-card group">
+    <div className="profile-card relative aspect-[3/4] rounded-2xl overflow-hidden shadow-card group">
       {/* Background Image */}
       <img
         src={image}
@@ -80,24 +80,24 @@ const ProfileCard = ({
           </p>
         </div>
 
-        {/* Action Buttons - Larger touch targets */}
-        <div className="flex justify-center gap-4 sm:gap-6">
+        {/* Action Buttons - Thumb-friendly touch targets */}
+        <div className="flex justify-center gap-5 sm:gap-6">
           <Button
             onClick={onDislike}
             size="icon"
             variant="glass"
-            className="w-14 h-14 sm:w-14 sm:h-14 rounded-full border-destructive/50 hover:border-destructive hover:bg-destructive/20 active:scale-95 transition-transform"
+            className="action-button w-14 h-14 sm:w-16 sm:h-16 rounded-full border-destructive/50 hover:border-destructive hover:bg-destructive/20 active:scale-90 transition-all duration-150"
           >
-            <X className="w-6 h-6 text-destructive" />
+            <X className="w-6 h-6 sm:w-7 sm:h-7 text-destructive" />
           </Button>
           
           <Button
             onClick={onLike}
             size="icon"
             variant="hero"
-            className="w-14 h-14 sm:w-14 sm:h-14 rounded-full active:scale-95 transition-transform"
+            className="action-button w-14 h-14 sm:w-16 sm:h-16 rounded-full active:scale-90 transition-all duration-150"
           >
-            <Heart className="w-6 h-6 fill-current" />
+            <Heart className="w-6 h-6 sm:w-7 sm:h-7 fill-current" />
           </Button>
         </div>
       </div>
