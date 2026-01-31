@@ -6,6 +6,7 @@ import BackgroundGrid from "@/components/BackgroundGrid";
 import Logo from "@/components/Logo";
 import { LeadTracker } from "@/lib/leadTracker";
 import { checkDeviceLocked, getDeviceBalance } from "@/hooks/useDeviceLock";
+import { getNavigationState, saveNavigationState } from "@/hooks/useNavigationState";
 import { ArrowLeft, User, Mail, Key, Eye, EyeOff, Crown, Check, Lock } from "lucide-react";
 
 const Cadastro = () => {
@@ -29,7 +30,18 @@ const Cadastro = () => {
       setDeviceBalance(getDeviceBalance());
       console.log("🔒 Device bloqueado detectado no cadastro");
     }
-  }, []);
+    
+    // 🔄 Verificar se usuário já está logado
+    const userName = localStorage.getItem("userName");
+    if (userName) {
+      const navState = getNavigationState();
+      const validPages = ["/descobrir", "/chat", "/perfil"];
+      const targetPage = navState.currentPage && validPages.includes(navState.currentPage) 
+        ? navState.currentPage 
+        : "/descobrir";
+      navigate(targetPage, { replace: true });
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,9 +58,11 @@ const Cadastro = () => {
     
     // 🔒 Se device está bloqueado, ir direto para descobrir (mostrará popup)
     if (isDeviceLocked) {
+      saveNavigationState({ currentPage: "/descobrir" });
       navigate("/descobrir");
     } else {
       // Redireciona para completar perfil
+      saveNavigationState({ currentPage: "/perfil" });
       navigate("/perfil");
     }
   };

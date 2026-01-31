@@ -11,6 +11,7 @@ import { LeadTracker } from "@/lib/leadTracker";
 import { useBalance } from "@/hooks/useBalance";
 import { useLikesLimit } from "@/hooks/useLikesLimit";
 import { useChatMessages } from "@/hooks/useChatMessages";
+import { saveNavigationState } from "@/hooks/useNavigationState";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, Mic, DollarSign, Crown } from "lucide-react";
@@ -84,10 +85,14 @@ const Chat = () => {
   const { isPremium, enterPremiumMode } = useLikesLimit();
   const isVip = isPremium;
   
-  // Track last page for insistent popup triggers
+  // Track last page for insistent popup triggers + navigation persistence
   useEffect(() => {
     localStorage.setItem("lastVisitedPage", "/chat");
-  }, []);
+    saveNavigationState({ 
+      currentPage: "/chat",
+      context: { profileName: profile.name, profileImage: profile.image }
+    });
+  }, [profile.name, profile.image]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

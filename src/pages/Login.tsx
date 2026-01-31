@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import BackgroundGrid from "@/components/BackgroundGrid";
 import Logo from "@/components/Logo";
+import { getNavigationState, saveNavigationState } from "@/hooks/useNavigationState";
 import { ArrowLeft, Mail, Eye, EyeOff, Heart } from "lucide-react";
 
 const Login = () => {
@@ -15,6 +16,19 @@ const Login = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
 
+  // 🔄 Verificar se usuário já está logado
+  useEffect(() => {
+    const userName = localStorage.getItem("userName");
+    if (userName) {
+      const navState = getNavigationState();
+      const validPages = ["/descobrir", "/chat", "/perfil"];
+      const targetPage = navState.currentPage && validPages.includes(navState.currentPage) 
+        ? navState.currentPage 
+        : "/descobrir";
+      navigate(targetPage, { replace: true });
+    }
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -23,7 +37,16 @@ const Login = () => {
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     localStorage.setItem("userName", "Gabriel");
-    navigate("/descobrir");
+    
+    // 🔄 Redirecionar para última página válida ou descobrir
+    const navState = getNavigationState();
+    const validPages = ["/descobrir", "/chat", "/perfil"];
+    const targetPage = navState.currentPage && validPages.includes(navState.currentPage) 
+      ? navState.currentPage 
+      : "/descobrir";
+    
+    saveNavigationState({ currentPage: targetPage });
+    navigate(targetPage);
   };
 
   return (

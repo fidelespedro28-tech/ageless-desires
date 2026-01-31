@@ -14,6 +14,7 @@ import { useBalance } from "@/hooks/useBalance";
 import { useCrownIndex } from "@/hooks/useCrownIndex";
 import { useCheckoutReturn } from "@/hooks/useCheckoutReturn";
 import { useDeviceLock } from "@/hooks/useDeviceLock";
+import { saveNavigationState } from "@/hooks/useNavigationState";
 import { Heart, X, Crown, DollarSign, User, Lock, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -237,7 +238,9 @@ const Descobrir = () => {
         setShowInsistentPopup(true);
       }, 1500);
     }
+    // 🔄 Salvar estado de navegação
     localStorage.setItem("lastVisitedPage", "/descobrir");
+    saveNavigationState({ currentPage: "/descobrir" });
   }, [isPremium]);
 
   const currentProfile = profiles[currentIndex];

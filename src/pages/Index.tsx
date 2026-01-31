@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import BackgroundGrid from "@/components/BackgroundGrid";
 import Logo from "@/components/Logo";
 import VipPopup from "@/components/VipPopup";
+import { getNavigationState, saveNavigationState } from "@/hooks/useNavigationState";
 import { Crown, Heart, Gift, Shield, Users, Star } from "lucide-react";
 
 import helenaImg from "@/assets/models/helena.jpg";
@@ -13,13 +14,41 @@ import fernandaImg from "@/assets/models/fernanda.jpg";
 const Index = () => {
   const navigate = useNavigate();
   const [showVipPopup, setShowVipPopup] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
+  // 🔄 Verificar se usuário já passou pelo fluxo e redirecionar
   useEffect(() => {
+    const userName = localStorage.getItem("userName");
+    const navState = getNavigationState();
+    
+    // Se o usuário já tem conta e estava em outra página, redirecionar
+    if (userName) {
+      const validPages = ["/descobrir", "/chat", "/perfil"];
+      const targetPage = navState.currentPage && validPages.includes(navState.currentPage) 
+        ? navState.currentPage 
+        : "/descobrir";
+      
+      console.log("🔄 Usuário existente detectado, redirecionando para:", targetPage);
+      setIsRedirecting(true);
+      navigate(targetPage, { replace: true });
+      return;
+    }
+    
+    // Mostrar popup VIP apenas para novos usuários
     const timer = setTimeout(() => {
-      setShowVipPopup(true);
+      if (!isRedirecting) {
+        setShowVipPopup(true);
+      }
     }, 3000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [navigate, isRedirecting]);
+
+  // Salvar estado de navegação
+  useEffect(() => {
+    if (!isRedirecting) {
+      saveNavigationState({ currentPage: "/" });
+    }
+  }, [isRedirecting]);
 
   const features = [
     {
