@@ -19,10 +19,14 @@ const incentiveMessages = [
   { main: "Você fez ela se sentir <span class='text-primary font-semibold'>DESEJADA</span>! Parabéns!", hint: "💕 Continue e acumule mais recompensas!" },
 ];
 
+// Preload audio para reprodução instantânea (SÓ toca aqui - única recompensa com som)
+const preloadedCashAudio = new Audio("/audios/audio-cash.mp3");
+preloadedCashAudio.preload = "auto";
+
 const PixRewardPopup = ({ isOpen, onContinue }: PixRewardPopupProps) => {
   const [amount, setAmount] = useState("0,00");
   const [message, setMessage] = useState(incentiveMessages[0]);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const hasPlayedRef = useRef(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -34,11 +38,19 @@ const PixRewardPopup = ({ isOpen, onContinue }: PixRewardPopupProps) => {
       const randomMessage = incentiveMessages[Math.floor(Math.random() * incentiveMessages.length)];
       setMessage(randomMessage);
 
-      // Som de dinheiro só toca aqui (recompensa de curtida) - é o único lugar permitido
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(() => {});
+      // Som de dinheiro instantâneo - SÓ no popup de recompensa de curtida
+      if (!hasPlayedRef.current) {
+        try {
+          preloadedCashAudio.currentTime = 0;
+          preloadedCashAudio.play().catch(() => {});
+          hasPlayedRef.current = true;
+        } catch (e) {
+          console.log("Erro ao tocar áudio:", e);
+        }
       }
+    } else {
+      // Reset flag when popup closes
+      hasPlayedRef.current = false;
     }
   }, [isOpen]);
 
@@ -46,9 +58,6 @@ const PixRewardPopup = ({ isOpen, onContinue }: PixRewardPopupProps) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
-      {/* Audio element */}
-      <audio ref={audioRef} src="/audios/audio-cash.mp3" preload="auto" />
-
       <div className="popup-box relative w-full max-w-sm bg-gradient-to-b from-[#1a2634] to-[#0f1419] border border-success/30 rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
         {/* Card Icon */}
         <div className="flex justify-center pt-5 sm:pt-6 pb-3 sm:pb-4">

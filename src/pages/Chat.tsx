@@ -27,11 +27,17 @@ interface Message {
   audioSrc?: string;
 }
 
-// Áudios específicos das coroas (SEM som de dinheiro)
+// Áudios específicos das coroas (SEM som de dinheiro nos popups)
 const AUDIO_START = "/audios/audio1.mp3"; // Áudio de boas-vindas (12s)
 const AUDIO_END = "/audios/audio2.mp3";   // Áudio de despedida/final (~20s)
+const AUDIO_CASH = "/audios/audio-cash.mp3"; // Som de dinheiro - SÓ para PIX de presente
 
 const MAX_MESSAGES = 4;
+const PIX_GIFT_AMOUNT = 40; // R$40,00 de presente
+
+// Preload audio for instant playback
+const preloadedCashAudio = new Audio(AUDIO_CASH);
+preloadedCashAudio.preload = "auto";
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -62,10 +68,13 @@ const Chat = () => {
     getResponseForMessage,
     markIntroAudioSent,
     markFinalAudioSent,
+    markGiftSent,
     shouldSendIntroAudio,
     shouldSendFinalAudio,
+    shouldSendGift,
     audioIntroSent,
     audioFinalSent,
+    giftSent,
     saveMessages,
     getSavedMessages,
     hasSavedConversation,
@@ -159,24 +168,52 @@ const Chat = () => {
       setIsInitialized(true);
     }, 1000);
 
-    // Áudio de boas-vindas - enviado apenas se ainda não foi enviado
+    // Áudio de boas-vindas - enviado apenas se ainda não foi enviado (delay 3-4s)
     const audioTimer = setTimeout(() => {
       if (shouldSendIntroAudio()) {
         sendCoroaAudio('start');
       }
     }, 3500);
 
-    // Show gift notification after some time
-    const giftTimer = setTimeout(() => {
-      setShowGiftNotification(true);
-    }, 25000);
-
     return () => {
       clearTimeout(textTimer);
       clearTimeout(audioTimer);
-      clearTimeout(giftTimer);
     };
   }, [isInitialized, getOpeningMessage, shouldSendIntroAudio, sendCoroaAudio, hasSavedConversation, getSavedMessages]);
+
+  // Tocar som de dinheiro instantaneamente (preloaded)
+  const playCashSound = useCallback(() => {
+    try {
+      preloadedCashAudio.currentTime = 0;
+      preloadedCashAudio.play().catch(() => {});
+    } catch (e) {
+      console.log("Erro ao tocar som:", e);
+    }
+  }, []);
+
+  // Enviar presente PIX após resposta da 2ª mensagem
+  const sendPixGift = useCallback(() => {
+    // Mensagem da coroa sobre o presente
+    const giftMessage: Message = {
+      id: Date.now() + 100,
+      content: "Acabei de te mandar um presente especial 💸... Espero que você goste, é só o começo do que posso fazer por você 😘",
+      isUser: false,
+      timestamp: getCurrentTimestamp()
+    };
+    setMessages((prev) => [...prev, giftMessage]);
+    
+    // Tocar som de dinheiro INSTANTANEAMENTE
+    playCashSound();
+    
+    // Mostrar notificação de presente
+    setTimeout(() => {
+      setShowGiftNotification(true);
+    }, 1500);
+    
+    // Marcar como enviado
+    markGiftSent();
+    console.log("🎁 Presente PIX de R$" + PIX_GIFT_AMOUNT + " enviado!");
+  }, [markGiftSent, playCashSound]);
 
   const sendMessage = () => {
     if (!inputValue.trim()) return;
@@ -226,32 +263,28 @@ const Chat = () => {
     setTimeout(() => {
       setIsTyping(false);
       
-      // Verificar se deve enviar áudio final (APÓS 3ª mensagem do lead)
+      // Resposta de texto da coroa
+      const responseText = getResponseForMessage(newMessagesCount);
+      const textMessage: Message = {
+        id: Date.now(),
+        content: responseText,
+        isUser: false,
+        timestamp: getCurrentTimestamp()
+      };
+      setMessages((prev) => [...prev, textMessage]);
+      
+      // APÓS a 2ª mensagem: enviar presente PIX (R$40)
+      if (shouldSendGift(newMessagesCount) && !giftSent) {
+        setTimeout(() => {
+          sendPixGift();
+        }, 2000);
+      }
+      
+      // APÓS a 3ª mensagem: enviar áudio final íntimo
       if (shouldSendFinalAudio(newMessagesCount) && !audioFinalSent) {
-        // Primeiro envia resposta de texto
-        const textResponse = getResponseForMessage(newMessagesCount);
-        const textMessage: Message = {
-          id: Date.now(),
-          content: textResponse,
-          isUser: false,
-          timestamp: getCurrentTimestamp()
-        };
-        setMessages((prev) => [...prev, textMessage]);
-        
-        // Depois de um delay, envia o áudio final
         setTimeout(() => {
           sendCoroaAudio('end');
-        }, 1500);
-      } else {
-        // Resposta normal da coroa (texto variado e único)
-        const responseText = getResponseForMessage(newMessagesCount);
-        const modelMessage: Message = {
-          id: Date.now() + 1,
-          content: responseText,
-          isUser: false,
-          timestamp: getCurrentTimestamp()
-        };
-        setMessages((prev) => [...prev, modelMessage]);
+        }, 2500);
       }
     }, typingDelay);
   };
@@ -293,15 +326,8 @@ const Chat = () => {
 
   const handleClaimGift = () => {
     setShowPixPopup(false);
-    addBalance(50);
-    
-    const giftMessage: Message = {
-      id: messages.length + 1,
-      content: "Acabei de te enviar um presente especial! 🎁 Espero que você goste... Isso é só um começo do que posso fazer por você 💕",
-      isUser: false,
-      timestamp: getCurrentTimestamp()
-    };
-    setMessages((prev) => [...prev, giftMessage]);
+    addBalance(PIX_GIFT_AMOUNT);
+    toast.success(`🎁 R$${PIX_GIFT_AMOUNT},00 adicionado ao seu saldo!`);
   };
 
   const isInputDisabled = !isVip && userMessagesCount >= MAX_MESSAGES;
@@ -451,10 +477,10 @@ const Chat = () => {
         onClose={() => setShowGiftNotification(false)}
       />
 
-      {/* Pix Popup - SEM som de dinheiro */}
+      {/* Pix Popup - SEM som aqui (som já tocou na notificação) */}
       <PixPopup
         isOpen={showPixPopup}
-        amount="R$50,00"
+        amount={`R$${PIX_GIFT_AMOUNT},00`}
         senderName={profile.name}
         senderImage={profile.image}
         onClaim={handleClaimGift}
