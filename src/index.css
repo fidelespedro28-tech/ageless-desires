@@ -308,66 +308,144 @@
 
 /* ===== MOBILE OPTIMIZATIONS ===== */
 
-/* Mobile-first touch optimization */
+/* Base mobile styles */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Prevent horizontal overflow globally */
+html, body, #root {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
+/* Mobile-first touch optimization - 360x640 (Android comum) */
 @media (max-width: 768px) {
-  /* Ensure minimum touch target size */
+  /* Ensure minimum touch target size - AAA accessibility */
   button, 
   a, 
   [role="button"],
-  .touchable {
-    min-height: 44px;
-    min-width: 44px;
+  .touchable,
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 48px;
+    min-width: 48px;
   }
 
   /* Improve text readability on mobile */
   body {
     font-size: 16px;
     line-height: 1.6;
-    -webkit-tap-highlight-color: transparent;
   }
 
   h1 {
-    font-size: 1.75rem !important;
+    font-size: clamp(1.5rem, 5vw, 2rem) !important;
     line-height: 1.2;
   }
 
   h2 {
-    font-size: 1.5rem !important;
+    font-size: clamp(1.25rem, 4vw, 1.75rem) !important;
   }
 
   h3 {
-    font-size: 1.25rem !important;
+    font-size: clamp(1.1rem, 3.5vw, 1.5rem) !important;
   }
 
   /* Better spacing on mobile */
   .container, main, section {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: clamp(0.75rem, 3vw, 1.5rem);
+    padding-right: clamp(0.75rem, 3vw, 1.5rem);
   }
-
-  /* Prevent horizontal scroll */
-  html, body {
-    overflow-x: hidden;
-    max-width: 100vw;
+  
+  /* Fluid layouts */
+  .flex-mobile-stack {
+    flex-direction: column;
+  }
+  
+  /* Fix overlapping elements */
+  .popup-box {
+    margin: 0.5rem;
+    width: calc(100vw - 1rem);
+    max-width: 100%;
   }
 }
 
-/* Extra small devices (320px) */
+/* Extra small devices - 320px to 360px */
 @media (max-width: 360px) {
   body {
     font-size: 14px;
   }
 
   h1 {
-    font-size: 1.5rem !important;
+    font-size: 1.4rem !important;
   }
 
   h2 {
-    font-size: 1.25rem !important;
+    font-size: 1.2rem !important;
+  }
+
+  h3 {
+    font-size: 1rem !important;
   }
 
   .popup-title {
-    font-size: 1.1rem !important;
+    font-size: 1rem !important;
+  }
+  
+  button, 
+  a, 
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Tighter padding on very small screens */
+  .container, main, section {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+/* iPhone 12+ (390x844) and similar */
+@media (min-width: 390px) and (max-width: 430px) {
+  .popup-box {
+    margin: 0.75rem;
+    max-height: 88vh;
+    max-height: 88dvh;
+  }
+  
+  h1 {
+    font-size: 1.75rem !important;
+  }
+}
+
+/* iPhone Plus / Max (414x896) */
+@media (min-width: 414px) and (max-width: 480px) {
+  .popup-box {
+    margin: 1rem;
+    max-height: 90vh;
+    max-height: 90dvh;
+  }
+}
+
+/* Tablet breakpoint (768px+) */
+@media (min-width: 768px) {
+  .popup-box {
+    max-width: 480px;
+    margin: 1.5rem auto;
+  }
+  
+  .profile-card {
+    max-width: 400px;
+  }
+}
+
+/* Large tablets and small desktops (1024px+) */
+@media (min-width: 1024px) {
+  .popup-box {
+    max-width: 520px;
   }
 }
 
@@ -377,11 +455,11 @@
   max-height: 90dvh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 @media (max-width: 768px) {
   .popup-box {
-    margin: 0.75rem;
     max-height: 85vh;
     max-height: 85dvh;
     border-radius: 1rem;
@@ -399,7 +477,6 @@
 
 @media (max-width: 360px) {
   .popup-box {
-    margin: 0.5rem;
     max-height: 88vh;
     max-height: 88dvh;
     padding: 0.75rem;
@@ -407,7 +484,7 @@
   
   .popup-btn {
     min-height: 48px;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
   }
 }
 
@@ -440,15 +517,22 @@
   }
 
   .safe-area-top {
-    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-top: max(0.5rem, env(safe-area-inset-top));
   }
   
   .safe-area-left {
-    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-left: max(0.5rem, env(safe-area-inset-left));
   }
   
   .safe-area-right {
-    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-right: max(0.5rem, env(safe-area-inset-right));
+  }
+  
+  .safe-area-all {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    padding-left: max(0.5rem, env(safe-area-inset-left));
+    padding-right: max(0.5rem, env(safe-area-inset-right));
   }
 }
 
@@ -456,12 +540,13 @@
 img {
   max-width: 100%;
   height: auto;
+  object-fit: cover;
 }
 
-/* Form inputs mobile optimization */
+/* Form inputs mobile optimization - prevents iOS zoom */
 @media (max-width: 768px) {
   input, textarea, select {
-    font-size: 16px !important; /* Prevents iOS zoom on focus */
+    font-size: 16px !important;
   }
 }
 
@@ -469,23 +554,28 @@ img {
 @supports (height: 100dvh) {
   .chat-container {
     height: 100dvh;
+    min-height: -webkit-fill-available;
   }
 }
 
 /* Fix for bottom navigation on mobile */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Space for bottom nav */
+.has-bottom-nav {
+  padding-bottom: calc(70px + env(safe-area-inset-bottom, 0));
+}
+
 @media (max-width: 768px) {
-  .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 50;
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-  
-  /* Space for bottom nav */
   .has-bottom-nav {
-    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0));
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0));
   }
 }
 
@@ -497,4 +587,78 @@ img {
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Chat input area - prevent overlap with floating buttons */
+.chat-input-area {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: inherit;
+}
+
+@media (max-width: 768px) {
+  .chat-input-area {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  
+  /* Ensure input doesn't overlap with keyboard */
+  .chat-input-area input {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Profile card responsiveness */
+.profile-card {
+  width: 100%;
+  max-width: min(340px, calc(100vw - 2rem));
+  margin: 0 auto;
+}
+
+@media (min-width: 390px) {
+  .profile-card {
+    max-width: min(360px, calc(100vw - 2rem));
+  }
+}
+
+@media (min-width: 768px) {
+  .profile-card {
+    max-width: 380px;
+  }
+}
+
+/* Smooth scrolling for all scrollable areas */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Action buttons thumb-friendly sizing */
+.action-button {
+  min-height: 56px;
+  min-width: 56px;
+  border-radius: 50%;
+}
+
+@media (max-width: 360px) {
+  .action-button {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+/* Floating action buttons - prevent overlap */
+.fab-container {
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0));
+  right: 1rem;
+  z-index: 40;
+}
+
+/* Mobile navigation optimization */
+@media (max-width: 768px) {
+  nav button {
+    min-width: 60px;
+    padding: 0.5rem;
+  }
 }

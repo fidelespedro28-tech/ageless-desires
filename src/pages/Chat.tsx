@@ -29,16 +29,12 @@ interface Message {
 }
 
 // Áudios específicos das coroas (SEM som de dinheiro nos popups)
-const AUDIO_START = "/audios/audio1.mp3"; // Áudio de boas-vindas (12s)
-const AUDIO_END = "/audios/audio2.mp3";   // Áudio de despedida/final (~20s)
-const AUDIO_CASH = "/audios/audio-cash.mp3"; // Som de dinheiro - SÓ para PIX de presente
+import { playCashSound, AUDIO_PATHS } from "@/hooks/usePreloadedAudio";
+const AUDIO_START = AUDIO_PATHS.CHAT_START;
+const AUDIO_END = AUDIO_PATHS.CHAT_END;
 
 const MAX_MESSAGES = 4;
 const PIX_GIFT_AMOUNT = 40; // R$40,00 de presente
-
-// Preload audio for instant playback
-const preloadedCashAudio = new Audio(AUDIO_CASH);
-preloadedCashAudio.preload = "auto";
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -186,16 +182,6 @@ const Chat = () => {
     };
   }, [isInitialized, getOpeningMessage, shouldSendIntroAudio, sendCoroaAudio, hasSavedConversation, getSavedMessages]);
 
-  // Tocar som de dinheiro instantaneamente (preloaded)
-  const playCashSound = useCallback(() => {
-    try {
-      preloadedCashAudio.currentTime = 0;
-      preloadedCashAudio.play().catch(() => {});
-    } catch (e) {
-      console.log("Erro ao tocar som:", e);
-    }
-  }, []);
-
   // Enviar presente PIX após resposta da 2ª mensagem
   const sendPixGift = useCallback(() => {
     // Mensagem da coroa sobre o presente
@@ -207,7 +193,7 @@ const Chat = () => {
     };
     setMessages((prev) => [...prev, giftMessage]);
     
-    // Tocar som de dinheiro INSTANTANEAMENTE
+    // Tocar som de dinheiro INSTANTANEAMENTE (preloaded com debounce)
     playCashSound();
     
     // Mostrar notificação de presente
@@ -218,7 +204,7 @@ const Chat = () => {
     // Marcar como enviado
     markGiftSent();
     console.log("🎁 Presente PIX de R$" + PIX_GIFT_AMOUNT + " enviado!");
-  }, [markGiftSent, playCashSound]);
+  }, [markGiftSent]);
 
   const sendMessage = () => {
     if (!inputValue.trim()) return;
@@ -338,7 +324,7 @@ const Chat = () => {
   const isInputDisabled = !isVip && userMessagesCount >= MAX_MESSAGES;
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex flex-col">
+    <div className="min-h-screen min-h-[100dvh] relative overflow-hidden flex flex-col">
       <BackgroundGrid useImage />
 
       {/* Header - Mobile optimized */}
@@ -377,8 +363,8 @@ const Chat = () => {
         </div>
       </header>
 
-      {/* Messages */}
-      <main className="relative z-10 flex-1 overflow-y-auto p-3 sm:p-4">
+      {/* Messages - Smooth scroll */}
+      <main className="relative z-10 flex-1 overflow-y-auto p-3 sm:p-4 smooth-scroll hide-scrollbar">
         {/* Today indicator */}
         <div className="flex justify-center mb-3 sm:mb-4">
           <span className="text-[10px] sm:text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
@@ -422,7 +408,7 @@ const Chat = () => {
           </div>
         )}
 
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} className="h-4" />
       </main>
 
       {/* Limit reached banner */}
@@ -440,15 +426,15 @@ const Chat = () => {
         </div>
       )}
 
-      {/* Input - Safe area for notched devices */}
-      <div className="relative z-20 p-3 sm:p-4 bg-card/80 backdrop-blur-sm border-t border-border safe-area-bottom">
-        <div className="flex items-center gap-2">
+      {/* Input - Safe area for notched devices + prevent overlap */}
+      <div className="chat-input-area relative z-20 p-3 sm:p-4 bg-card/95 backdrop-blur-sm border-t border-border">
+        <div className="flex items-center gap-2 max-w-lg mx-auto">
           <Input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={isInputDisabled ? "Limite atingido - Seja VIP!" : "Mensagem..."}
-            className="flex-1 text-base"
+            className="flex-1 text-base py-3 px-4"
             disabled={isInputDisabled}
           />
           {inputValue.trim() ? (
@@ -456,7 +442,7 @@ const Chat = () => {
               onClick={sendMessage} 
               size="icon" 
               variant="hero" 
-              className="shrink-0 min-w-[44px] min-h-[44px]"
+              className="shrink-0 min-w-[48px] min-h-[48px] active:scale-95 transition-transform"
               disabled={isInputDisabled}
             >
               <Send className="w-5 h-5" />
@@ -465,7 +451,7 @@ const Chat = () => {
             <Button 
               size="icon" 
               variant="ghost" 
-              className="shrink-0 min-w-[44px] min-h-[44px]"
+              className="shrink-0 min-w-[48px] min-h-[48px]"
               disabled={isInputDisabled}
             >
               <Mic className="w-5 h-5" />
