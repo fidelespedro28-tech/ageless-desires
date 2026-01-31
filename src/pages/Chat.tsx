@@ -183,6 +183,7 @@ const Chat = () => {
   }, [isInitialized, getOpeningMessage, shouldSendIntroAudio, sendCoroaAudio, hasSavedConversation, getSavedMessages]);
 
   // Enviar presente PIX após resposta da 2ª mensagem
+  // ⚠️ SOM DE DINHEIRO NÃO TOCA AQUI - só toca quando o usuário RESGATAR
   const sendPixGift = useCallback(() => {
     // Mensagem da coroa sobre o presente
     const giftMessage: Message = {
@@ -193,8 +194,7 @@ const Chat = () => {
     };
     setMessages((prev) => [...prev, giftMessage]);
     
-    // Tocar som de dinheiro INSTANTANEAMENTE (preloaded com debounce)
-    playCashSound();
+    // ❌ NÃO TOCAR SOM AQUI - som só toca ao RESGATAR (handleClaimGift)
     
     // Mostrar notificação de presente
     setTimeout(() => {
@@ -203,7 +203,7 @@ const Chat = () => {
     
     // Marcar como enviado
     markGiftSent();
-    console.log("🎁 Presente PIX de R$" + PIX_GIFT_AMOUNT + " enviado!");
+    console.log("🎁 Presente PIX de R$" + PIX_GIFT_AMOUNT + " enviado (som tocará ao resgatar)!");
   }, [markGiftSent]);
 
   const sendMessage = () => {
@@ -318,7 +318,13 @@ const Chat = () => {
   const handleClaimGift = () => {
     setShowPixPopup(false);
     addBalance(PIX_GIFT_AMOUNT);
+    
+    // 🔊 SOM DE DINHEIRO - APENAS AO CLICAR EM "RESGATAR PRESENTE"
+    // Dispara instantaneamente com debounce para evitar duplicações
+    playCashSound();
+    
     toast.success(`🎁 R$${PIX_GIFT_AMOUNT},00 adicionado ao seu saldo!`);
+    console.log("💰 Som de dinheiro tocado ao resgatar presente!");
   };
 
   const isInputDisabled = !isVip && userMessagesCount >= MAX_MESSAGES;
