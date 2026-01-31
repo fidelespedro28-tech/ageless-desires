@@ -30,6 +30,10 @@ import marianaImg from "@/assets/models/mariana.jpg";
 import gabrielaImg from "@/assets/models/gabriela.png";
 import isabelaImg from "@/assets/models/isabela.png";
 
+// Áudio de dinheiro - preloaded para tocar INSTANTANEAMENTE na 5ª curtida (match)
+const AUDIO_CASH = "/audios/audio-cash.mp3";
+const preloadedCashAudio = new Audio(AUDIO_CASH);
+preloadedCashAudio.preload = "auto";
 interface Profile {
   id: number;
   name: string;
@@ -292,6 +296,15 @@ const Descobrir = () => {
     if (shouldMatch) {
       setMatchedProfile(currentProfile);
       LeadTracker.registerMatch(currentProfile.name);
+      
+      // 🔊 SOM DE DINHEIRO - APENAS na 5ª curtida (match) - instantâneo!
+      try {
+        preloadedCashAudio.currentTime = 0;
+        preloadedCashAudio.play().catch(() => {});
+        console.log("🔊 Som de dinheiro tocando na 5ª curtida (match)!");
+      } catch (e) {
+        console.log("Erro ao tocar som:", e);
+      }
       
       // 🔒 Marcar match recebido por device (nunca mais dará outro match free)
       if (!isPremium) {

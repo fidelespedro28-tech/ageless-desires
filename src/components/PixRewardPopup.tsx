@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import cardIcon from "@/assets/icons/card-icon.png";
-
 interface PixRewardPopupProps {
   isOpen: boolean;
   onContinue: () => void;
@@ -19,14 +18,11 @@ const incentiveMessages = [
   { main: "Você fez ela se sentir <span class='text-primary font-semibold'>DESEJADA</span>! Parabéns!", hint: "💕 Continue e acumule mais recompensas!" },
 ];
 
-// Preload audio para reprodução instantânea (SÓ toca aqui - única recompensa com som)
-const preloadedCashAudio = new Audio("/audios/audio-cash.mp3");
-preloadedCashAudio.preload = "auto";
-
+// SEM SOM AQUI - o som só toca na 5ª curtida (match) e no PIX de R$40 do chat
+// O popup de recompensa de curtidas NÃO deve ter som
 const PixRewardPopup = ({ isOpen, onContinue }: PixRewardPopupProps) => {
   const [amount, setAmount] = useState("0,00");
   const [message, setMessage] = useState(incentiveMessages[0]);
-  const hasPlayedRef = useRef(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -38,19 +34,8 @@ const PixRewardPopup = ({ isOpen, onContinue }: PixRewardPopupProps) => {
       const randomMessage = incentiveMessages[Math.floor(Math.random() * incentiveMessages.length)];
       setMessage(randomMessage);
 
-      // Som de dinheiro instantâneo - SÓ no popup de recompensa de curtida
-      if (!hasPlayedRef.current) {
-        try {
-          preloadedCashAudio.currentTime = 0;
-          preloadedCashAudio.play().catch(() => {});
-          hasPlayedRef.current = true;
-        } catch (e) {
-          console.log("Erro ao tocar áudio:", e);
-        }
-      }
-    } else {
-      // Reset flag when popup closes
-      hasPlayedRef.current = false;
+      // SEM SOM AQUI - popup de recompensa de curtida não tem som
+      // O som só toca na 5ª curtida (match) e no PIX de R$40 do chat
     }
   }, [isOpen]);
 
