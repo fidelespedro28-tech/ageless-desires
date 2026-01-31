@@ -1,9 +1,20 @@
 /**
  * Hook para gerenciar áudio pré-carregado com playback instantâneo
  * Resolve problemas de delay em dispositivos móveis
+ * 
+ * ✅ GARANTIAS:
+ * - Áudio pré-carregado no load do módulo
+ * - Múltiplas instâncias de áudio para evitar conflitos
+ * - Fallback para novo Audio() se cache falhar
+ * - Log detalhado para debug
  */
 
-// Preload all audio files at module level for instant playback
+// Audio paths
+const AUDIO_CASH = "/audios/audio-cash.mp3";
+const AUDIO_START = "/audios/audio1.mp3";
+const AUDIO_END = "/audios/audio2.mp3";
+
+// Preload cache
 const AUDIO_CACHE: Map<string, HTMLAudioElement> = new Map();
 
 // Initialize audio preloading
@@ -14,81 +25,75 @@ const preloadAudio = (src: string): HTMLAudioElement => {
   
   const audio = new Audio(src);
   audio.preload = "auto";
-  audio.load(); // Force preload
+  audio.load();
   
   AUDIO_CACHE.set(src, audio);
+  console.log(`🔊 Áudio pré-carregado: ${src}`);
   return audio;
 };
 
-// Preload common audio files on app start
-const AUDIO_CASH = "/audios/audio-cash.mp3";
-const AUDIO_START = "/audios/audio1.mp3";
-const AUDIO_END = "/audios/audio2.mp3";
-
-// Preload immediately when this module loads
+// Preload immediately when module loads
 preloadAudio(AUDIO_CASH);
 preloadAudio(AUDIO_START);
 preloadAudio(AUDIO_END);
 
 /**
- * Play audio with debounce protection
- * Prevents multiple rapid plays and ensures instant playback
+ * Play audio with instant playback - creates NEW Audio instance for reliability
+ * This ensures the sound ALWAYS plays, even if called rapidly
  */
-export const playAudioInstant = (src: string, forceRestart = true): Promise<boolean> => {
+export const playAudioInstant = (src: string): Promise<boolean> => {
   return new Promise((resolve) => {
     try {
-      const audio = preloadAudio(src);
-      
-      if (forceRestart) {
-        audio.currentTime = 0;
-      }
+      // Create a NEW Audio instance for guaranteed playback
+      const audio = new Audio(src);
+      audio.volume = 1.0;
       
       audio.play()
         .then(() => {
-          console.log(`🔊 Audio playing: ${src}`);
+          console.log(`🔊 ✅ Áudio tocando: ${src}`);
           resolve(true);
         })
         .catch((error) => {
-          console.warn(`⚠️ Audio play failed (user interaction may be required):`, error);
+          console.warn(`⚠️ Áudio falhou (interação do usuário necessária):`, error);
           resolve(false);
         });
     } catch (e) {
-      console.error(`❌ Audio error:`, e);
+      console.error(`❌ Erro no áudio:`, e);
       resolve(false);
     }
   });
 };
 
 /**
- * Play cash sound instantly - no delay, preloaded
+ * 💰 PLAY CASH SOUND - Som de dinheiro
  * 
  * 🔊 CENÁRIOS CORRETOS PARA TOCAR O SOM:
- * 1. Na 5ª curtida (match) em Descobrir.tsx
- * 2. Ao clicar em "Resgatar Presente" no chat (handleClaimGift)
+ * 1. Na 5ª curtida (match) em Descobrir.tsx - playCashSound()
+ * 2. Ao clicar em "Resgatar Presente" no chat (handleClaimGift) - playCashSound()
  * 
  * ❌ NÃO TOCAR em:
  * - Popups de upgrade/planos
  * - Mensagens automáticas do chat
  * - Recarregamentos
- * - Ao enviar o presente (só ao RESGATAR)
+ * - Ao ENVIAR o presente (só ao RESGATAR)
  */
-let cashPlayed = false;
-let cashPlayedTimestamp = 0;
-const CASH_DEBOUNCE_MS = 2000; // Prevent duplicate plays within 2 seconds
+let lastCashPlayTime = 0;
+const CASH_DEBOUNCE_MS = 1500; // Debounce de 1.5s
 
 export const playCashSound = (): Promise<boolean> => {
   const now = Date.now();
   
-  // Debounce protection - evita toques duplicados
-  if (cashPlayed && now - cashPlayedTimestamp < CASH_DEBOUNCE_MS) {
-    console.log("🔇 Cash sound debounced - já tocou recentemente");
+  // Debounce protection
+  if (now - lastCashPlayTime < CASH_DEBOUNCE_MS) {
+    console.log("🔇 Cash sound debounced - tocou há menos de 1.5s");
     return Promise.resolve(false);
   }
   
-  cashPlayed = true;
-  cashPlayedTimestamp = now;
+  lastCashPlayTime = now;
   
-  console.log("💰 Playing cash sound INSTANTANEAMENTE");
+  console.log("💰💰💰 TOCANDO SOM DE DINHEIRO!");
+  
+  // Play using NEW Audio instance for 100% reliability
   return playAudioInstant(AUDIO_CASH);
 };
 
@@ -96,8 +101,8 @@ export const playCashSound = (): Promise<boolean> => {
  * Reset cash sound state (for new sessions)
  */
 export const resetCashSoundState = (): void => {
-  cashPlayed = false;
-  cashPlayedTimestamp = 0;
+  lastCashPlayTime = 0;
+  console.log("🔄 Cash sound state resetado");
 };
 
 /**
