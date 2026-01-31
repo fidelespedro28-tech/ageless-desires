@@ -46,9 +46,7 @@ const VipPaymentPopup = ({ isOpen, onClose, onPurchase }: VipPaymentPopupProps) 
   if (!isOpen) return null;
 
   const handlePurchase = () => {
-    // Play cash sound
-    const audio = new Audio('/audios/audio-cash.mp3');
-    audio.play().catch(() => {}); // Ignore errors if audio fails
+    // SEM som nos popups de planos - som só é permitido em recompensas reais
     onPurchase();
   };
 
