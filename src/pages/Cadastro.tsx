@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import BackgroundGrid from "@/components/BackgroundGrid";
 import Logo from "@/components/Logo";
 import { LeadTracker } from "@/lib/leadTracker";
-import { ArrowLeft, User, Mail, Key, Eye, EyeOff, Crown, Check } from "lucide-react";
+import { checkDeviceLocked, getDeviceBalance } from "@/hooks/useDeviceLock";
+import { ArrowLeft, User, Mail, Key, Eye, EyeOff, Crown, Check, Lock } from "lucide-react";
 
 const Cadastro = () => {
   const navigate = useNavigate();
@@ -17,6 +18,18 @@ const Cadastro = () => {
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeviceLocked, setIsDeviceLocked] = useState(false);
+  const [deviceBalance, setDeviceBalance] = useState(0);
+
+  // 🔒 Verificar bloqueio de device ao carregar
+  useEffect(() => {
+    const locked = checkDeviceLocked();
+    setIsDeviceLocked(locked);
+    if (locked) {
+      setDeviceBalance(getDeviceBalance());
+      console.log("🔒 Device bloqueado detectado no cadastro");
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,8 +44,13 @@ const Cadastro = () => {
     // Registra o cadastro no LeadTracker e dispara evento Lead
     LeadTracker.registerSignup(formData.nome, formData.email, formData.pix);
     
-    // Redireciona para completar perfil
-    navigate("/perfil");
+    // 🔒 Se device está bloqueado, ir direto para descobrir (mostrará popup)
+    if (isDeviceLocked) {
+      navigate("/descobrir");
+    } else {
+      // Redireciona para completar perfil
+      navigate("/perfil");
+    }
   };
 
   const benefits = [
@@ -63,16 +81,40 @@ const Cadastro = () => {
         <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-4 sm:py-8">
           <div className="w-full max-w-md">
             <div className="bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-5 sm:p-8 shadow-card animate-fade-in-up">
+              {/* 🔒 Aviso de device bloqueado */}
+              {isDeviceLocked && (
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-primary/10 border border-primary/30 rounded-xl">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                    <span className="font-semibold text-primary text-sm sm:text-base">Bem-vindo de volta!</span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Você já concluiu suas curtidas neste dispositivo. 
+                    {deviceBalance > 0 && (
+                      <span className="block mt-1 text-success font-medium">
+                        💰 Seu saldo de R${deviceBalance.toFixed(2)} continua disponível!
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs sm:text-sm text-primary mt-2 font-medium">
+                    Faça login para acessar todos os benefícios premium! 💎
+                  </p>
+                </div>
+              )}
+
               {/* Header */}
               <div className="text-center mb-5 sm:mb-8">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
                   <Crown className="w-7 h-7 sm:w-8 sm:h-8 text-primary-foreground" />
                 </div>
                 <h1 className="font-display text-xl sm:text-2xl font-bold mb-2">
-                  Criar conta 💋
+                  {isDeviceLocked ? "Acesse sua conta 💎" : "Criar conta 💋"}
                 </h1>
                 <p className="text-muted-foreground text-sm sm:text-base">
-                  Entre para o clube mais exclusivo do Brasil
+                  {isDeviceLocked 
+                    ? "Complete o cadastro para desbloquear tudo" 
+                    : "Entre para o clube mais exclusivo do Brasil"
+                  }
                 </p>
               </div>
 
@@ -165,6 +207,11 @@ const Cadastro = () => {
                       <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                       Criando conta...
                     </div>
+                  ) : isDeviceLocked ? (
+                    <>
+                      <Crown className="w-5 h-5" />
+                      Acessar Conta Premium
+                    </>
                   ) : (
                     <>
                       <Crown className="w-5 h-5" />

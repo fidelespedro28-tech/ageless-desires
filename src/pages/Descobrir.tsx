@@ -13,6 +13,7 @@ import { useLikesLimit } from "@/hooks/useLikesLimit";
 import { useBalance } from "@/hooks/useBalance";
 import { useCrownIndex } from "@/hooks/useCrownIndex";
 import { useCheckoutReturn } from "@/hooks/useCheckoutReturn";
+import { useDeviceLock } from "@/hooks/useDeviceLock";
 import { Heart, X, Crown, DollarSign, User, Lock, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -149,6 +150,18 @@ const MATCH_AT = 5; // Match acontece EXATAMENTE na 5ª curtida
 const Descobrir = () => {
   const navigate = useNavigate();
   
+  // 🔒 Device Lock System - Bloqueio por dispositivo (persiste mesmo com nova conta)
+  const {
+    isLikesBlocked,
+    isGloballyLocked,
+    markLikesCompleted,
+    markMatchReceived,
+    hasReceivedMatch,
+    updateTotalLikes,
+    updateTotalBalance,
+    getPersistedBalance,
+  } = useDeviceLock();
+  
   // Persistent crown index hook - continues from where user left off
   const { currentIndex, setCurrentIndex } = useCrownIndex(profiles.length);
   
@@ -166,8 +179,8 @@ const Descobrir = () => {
   const [showInsistentPopup, setShowInsistentPopup] = useState(false);
   const [insistentTrigger, setInsistentTrigger] = useState<"likes_complete" | "chat_end" | "matches_return" | "new_chat" | "general">("general");
 
-  // Persistent balance hook
-  const { balance, addBalance } = useBalance(0);
+  // Persistent balance hook (usa saldo do device se existir)
+  const { balance, addBalance } = useBalance(getPersistedBalance());
 
   // Likes limit hook - 10 likes grátis, match só na 5ª
   const { 
@@ -190,12 +203,20 @@ const Descobrir = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Show premium popup immediately if user already reached limit (page reload)
+  // 🔒 Verificar bloqueio por device ao carregar
   useEffect(() => {
-    if (hasReachedLimit && !isPremium) {
+    if (isLikesBlocked() && !isPremium) {
+      console.log("🔒 Device bloqueado - exibindo popup premium");
       setShowVipPlans(true);
     }
-  }, [hasReachedLimit, isPremium]);
+  }, [isLikesBlocked, isPremium]);
+
+  // Show premium popup immediately if user already reached limit (page reload)
+  useEffect(() => {
+    if ((hasReachedLimit || isGloballyLocked()) && !isPremium) {
+      setShowVipPlans(true);
+    }
+  }, [hasReachedLimit, isPremium, isGloballyLocked]);
 
   // Show insistent popup when returning from matches/chat
   useEffect(() => {
@@ -218,6 +239,16 @@ const Descobrir = () => {
   const currentProfile = profiles[currentIndex];
 
   const handleLike = () => {
+    // 🔒 Block if device is locked (mesmo com nova conta)
+    if (isLikesBlocked() && !isPremium) {
+      console.log("🔒 Curtidas bloqueadas neste dispositivo");
+      setShowVipPlans(true);
+      toast.error("Curtidas esgotadas!", {
+        description: "Você já concluiu suas curtidas neste dispositivo. Seja VIP para continuar!",
+      });
+      return;
+    }
+
     // Block if limit reached and not premium
     if (!canLike) {
       setShowVipPlans(true);
@@ -237,32 +268,47 @@ const Descobrir = () => {
     // Track like
     LeadTracker.incrementLikes();
     
+    // 🔒 Atualizar contador persistente por device
+    updateTotalLikes(newLikesCount);
+    
     // Generate random reward R$ 4,00 - R$ 9,90
     const reward = parseFloat((Math.random() * (9.90 - 4.00) + 4.00).toFixed(2));
     setPendingReward(reward);
     addBalance(reward);
     
+    // 🔒 Atualizar saldo persistente por device
+    updateTotalBalance(balance + reward);
+    
     // Show PIX reward popup
     setShowPixReward(true);
 
     // 🎯 LÓGICA DE MATCH:
-    // FREE: Match EXATAMENTE na 5ª curtida (não antes, não depois)
+    // FREE: Match EXATAMENTE na 5ª curtida (não antes, não depois) - APENAS UMA VEZ POR DEVICE
     // PREMIUM: Match a cada 3 curtidas
     const shouldMatch = isPremium 
       ? newLikesCount % 3 === 0 
-      : newLikesCount === MATCH_AT;
+      : (newLikesCount === MATCH_AT && !hasReceivedMatch());
     
     if (shouldMatch) {
       setMatchedProfile(currentProfile);
       LeadTracker.registerMatch(currentProfile.name);
+      
+      // 🔒 Marcar match recebido por device (nunca mais dará outro match free)
+      if (!isPremium) {
+        markMatchReceived();
+      }
+      
       console.log(`🎯 Match liberado na curtida ${newLikesCount}!`);
     }
 
     // Advance to next crown (persisted)
     setCurrentIndex(currentIndex + 1);
 
-    // Check if reached limit (10 likes) - show premium popup
+    // Check if reached limit (10 likes) - show premium popup AND lock device
     if (!isPremium && newLikesCount >= maxFreeLikes) {
+      // 🔒 Bloquear device permanentemente
+      markLikesCompleted();
+      
       setTimeout(() => {
         setInsistentTrigger("likes_complete");
         setShowInsistentPopup(true);
@@ -271,6 +317,9 @@ const Descobrir = () => {
 
     // Check if all profiles viewed
     if (currentIndex + 1 >= profiles.length) {
+      // 🔒 Bloquear device permanentemente
+      markLikesCompleted();
+      
       setTimeout(() => {
         setInsistentTrigger("likes_complete");
         setShowInsistentPopup(true);
