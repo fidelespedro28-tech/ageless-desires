@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 // Mensagens de abertura únicas por perfil (nunca repetir)
 const OPENING_MESSAGES = [
@@ -74,6 +74,7 @@ interface ChatState {
     isAudio?: boolean;
     audioSrc?: string;
   }>;
+  introAudioTriggered: boolean; // Flag extra para garantir disparo único
 }
 
 const CHAT_STATE_KEY = "chatConversationState";
@@ -85,6 +86,7 @@ const getInitialState = (): ChatState => ({
   audioFinalSent: false,
   messagesCount: 0,
   savedMessages: [],
+  introAudioTriggered: false,
 });
 
 export const useChatMessages = (profileName: string) => {
@@ -93,7 +95,6 @@ export const useChatMessages = (profileName: string) => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Ensure all required fields exist
         return {
           ...getInitialState(),
           ...parsed,
@@ -105,9 +106,15 @@ export const useChatMessages = (profileName: string) => {
     return getInitialState();
   });
 
+  // Ref para evitar múltiplos disparos de áudio
+  const audioIntroRef = useRef(state.audioIntroSent);
+  const audioFinalRef = useRef(state.audioFinalSent);
+
   // Salvar estado no localStorage sempre que mudar
   useEffect(() => {
     localStorage.setItem(CHAT_STATE_KEY, JSON.stringify(state));
+    audioIntroRef.current = state.audioIntroSent;
+    audioFinalRef.current = state.audioFinalSent;
   }, [state]);
 
   // Salvar mensagens da conversa (persistência)
@@ -131,11 +138,9 @@ export const useChatMessages = (profileName: string) => {
   // Obter mensagem de abertura única
   const getOpeningMessage = useCallback((): string => {
     if (state.usedOpeningIndex >= 0 && state.usedOpeningIndex < OPENING_MESSAGES.length) {
-      // Já enviou abertura, retornar a mesma
       return OPENING_MESSAGES[state.usedOpeningIndex].replace("{name}", profileName);
     }
 
-    // Escolher nova mensagem de abertura (não usada antes)
     const availableIndexes = OPENING_MESSAGES.map((_, i) => i).filter(
       (i) => i !== state.usedOpeningIndex
     );
@@ -146,7 +151,7 @@ export const useChatMessages = (profileName: string) => {
     return OPENING_MESSAGES[randomIndex].replace("{name}", profileName);
   }, [state.usedOpeningIndex, profileName]);
 
-  // Obter resposta baseada no número da mensagem do lead (com anti-repetição)
+  // Obter resposta baseada no número da mensagem do lead
   const getResponseForMessage = useCallback((messageNumber: number): string => {
     let responseSet: string[];
     
@@ -171,7 +176,6 @@ export const useChatMessages = (profileName: string) => {
       (i) => !usedIndexes.includes(i)
     );
 
-    // Se todas foram usadas, resetar para evitar mensagem vazia
     const indexPool = availableIndexes.length > 0 ? availableIndexes : responseSet.map((_, i) => i);
     const randomIndex = indexPool[Math.floor(Math.random() * indexPool.length)];
 
@@ -187,29 +191,57 @@ export const useChatMessages = (profileName: string) => {
     return responseSet[randomIndex];
   }, [state.usedResponses]);
 
-  // Marcar áudio de introdução como enviado
+  // Marcar áudio de introdução como enviado (com proteção contra duplicatas)
   const markIntroAudioSent = useCallback(() => {
-    setState((prev) => ({ ...prev, audioIntroSent: true }));
+    if (!audioIntroRef.current) {
+      audioIntroRef.current = true;
+      setState((prev) => ({ 
+        ...prev, 
+        audioIntroSent: true,
+        introAudioTriggered: true,
+      }));
+      console.log("🎵 Áudio intro marcado como enviado");
+    }
   }, []);
 
-  // Marcar áudio final como enviado
+  // Marcar áudio final como enviado (com proteção contra duplicatas)
   const markFinalAudioSent = useCallback(() => {
-    setState((prev) => ({ ...prev, audioFinalSent: true }));
+    if (!audioFinalRef.current) {
+      audioFinalRef.current = true;
+      setState((prev) => ({ ...prev, audioFinalSent: true }));
+      console.log("🎵 Áudio final marcado como enviado");
+    }
   }, []);
 
   // Verificar se deve enviar áudio de introdução (apenas uma vez por conversa)
   const shouldSendIntroAudio = useCallback((): boolean => {
-    return !state.audioIntroSent;
-  }, [state.audioIntroSent]);
+    // Verificar tanto o state quanto o ref para garantir
+    const shouldSend = !state.audioIntroSent && !audioIntroRef.current && !state.introAudioTriggered;
+    console.log("🔍 shouldSendIntroAudio:", shouldSend, {
+      audioIntroSent: state.audioIntroSent,
+      audioIntroRef: audioIntroRef.current,
+      introAudioTriggered: state.introAudioTriggered,
+    });
+    return shouldSend;
+  }, [state.audioIntroSent, state.introAudioTriggered]);
 
   // Verificar se deve enviar áudio final (APÓS a 3ª mensagem, ANTES da 4ª)
   const shouldSendFinalAudio = useCallback((currentMessageCount: number): boolean => {
-    return currentMessageCount === 3 && !state.audioFinalSent;
+    const shouldSend = currentMessageCount === 3 && !state.audioFinalSent && !audioFinalRef.current;
+    console.log("🔍 shouldSendFinalAudio:", shouldSend, { currentMessageCount, audioFinalSent: state.audioFinalSent });
+    return shouldSend;
   }, [state.audioFinalSent]);
+
+  // Verificar se conversa está finalizada (para bloqueio por device)
+  const isConversationFinalized = useCallback((): boolean => {
+    return state.messagesCount >= 4;
+  }, [state.messagesCount]);
 
   // Resetar conversa (para novo chat ou debugging)
   const resetConversation = useCallback(() => {
     localStorage.removeItem(CHAT_STATE_KEY);
+    audioIntroRef.current = false;
+    audioFinalRef.current = false;
     setState(getInitialState());
   }, []);
 
@@ -220,6 +252,7 @@ export const useChatMessages = (profileName: string) => {
     markFinalAudioSent,
     shouldSendIntroAudio,
     shouldSendFinalAudio,
+    isConversationFinalized,
     resetConversation,
     saveMessages,
     getSavedMessages,
