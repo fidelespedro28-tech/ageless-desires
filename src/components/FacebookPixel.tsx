@@ -15,42 +15,39 @@ declare global {
 
 const FacebookPixel = () => {
   const location = useLocation();
-  const isFirstRender = useRef(true);
-  const previousPath = useRef<string | null>(null);
+  const isFirstLoad = useRef(true);
+  const lastPath = useRef<string | null>(null);
 
-  // Inicializa o LeadTracker na montagem
+  // Inicialização única - NÃO dispara PageView aqui
+  // PageView inicial vem EXCLUSIVAMENTE do index.html
   useEffect(() => {
     LeadTracker.init();
+    lastPath.current = location.pathname;
     console.log("🔵 Facebook Pixel ativo:", FB_PIXEL_ID);
-    console.log("📍 Rota inicial:", location.pathname);
+    console.log("📍 Rota inicial (PageView via index.html):", location.pathname);
   }, []);
 
-  // Rastreia mudanças de página (SPA navigation)
+  // Rastreia APENAS mudanças de rota SPA (navegações subsequentes)
   useEffect(() => {
-    // Primeiro render: o PageView inicial já foi disparado pelo script no index.html
-    // Apenas registra a página no LeadTracker, sem duplicar o fbq
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      previousPath.current = location.pathname;
-      LeadTracker.trackPageVisit();
-      console.log("📄 Página inicial registrada (PageView via index.html):", location.pathname);
+    // Primeira renderização: pula, pois PageView já foi disparado no index.html
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
       return;
     }
 
-    // Evita disparo duplicado se a rota não mudou realmente
-    if (previousPath.current === location.pathname) {
-      return;
-    }
+    // Só dispara se a rota realmente mudou
+    if (lastPath.current !== location.pathname) {
+      lastPath.current = location.pathname;
 
-    previousPath.current = location.pathname;
-
-    // Dispara PageView apenas em navegações SPA subsequentes
-    if (typeof window.fbq === "function") {
-      window.fbq("track", "PageView");
-      LeadTracker.trackPageVisit();
-      console.log("📄 PageView tracked (SPA):", location.pathname);
-    } else {
-      console.warn("⚠️ fbq não disponível para tracking");
+      // Validação robusta antes de disparar
+      if (
+        typeof window !== "undefined" &&
+        typeof window.fbq === "function"
+      ) {
+        window.fbq("track", "PageView");
+        LeadTracker.trackPageVisit();
+        console.log("📄 PageView SPA:", location.pathname);
+      }
     }
   }, [location.pathname]);
 
