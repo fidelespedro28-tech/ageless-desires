@@ -76,11 +76,8 @@ class LeadTrackerClass {
         this.saveLeadData(createInitialLeadData());
       }
       
-      // Registra página visitada
+      // Registra página visitada (sem disparar PageView - já feito no index.html)
       this.trackPageVisit();
-      
-      // Dispara PageView
-      this.triggerFacebookEvent("PageView");
       
       this.initialized = true;
       console.log("✅ LeadTracker inicializado com sucesso");
