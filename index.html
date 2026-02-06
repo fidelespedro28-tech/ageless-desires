@@ -4,9 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Clube das Coroas - Encontros Exclusivos</title>
+
     <meta name="description" content="Onde o charme da maturidade encontra o desejo da juventude. Mulheres maduras incríveis se conectam com jovens em uma relação leve e vantajosa." />
     <meta name="author" content="Clube das Coroas" />
     <meta name="theme-color" content="#FF69B4" />
+
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
 
@@ -19,27 +21,70 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-    <!-- Meta Pixel Code -->
-    <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1507627130505065');
-    fbq('track', 'PageView');
-    </script>
-    <!-- End Meta Pixel Code -->
   </head>
 
   <body>
-    <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=1507627130505065&ev=PageView&noscript=1"/></noscript>
     <div id="root"></div>
+
+    <!-- Script principal do React -->
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Meta Pixel SPA Safe -->
+    <script>
+      (function () {
+        function initMetaPixel(PIXEL_ID) {
+          if (!PIXEL_ID) return;
+
+          if (window.fbq && window.fbq.loaded) {
+            console.log('[MetaPixel] Pixel já carregado');
+            return;
+          }
+
+          !(function (f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function () {
+              n.callMethod
+                ? n.callMethod.apply(n, arguments)
+                : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = '2.0';
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+          })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+
+          fbq('init', '1507627130505065');
+          fbq('track', 'PageView');
+
+          window.__META_PIXEL_READY__ = true;
+          console.log('[MetaPixel] Pixel inicializado');
+        }
+
+        function trackEvent(event, params = {}) {
+          if (!window.fbq || !window.__META_PIXEL_READY__) return;
+          fbq('track', event, params);
+          console.log('[MetaPixel] Evento:', event, params);
+        }
+
+        window.MetaPixel = {
+          init: initMetaPixel,
+          pageView: () => trackEvent('PageView'),
+          viewContent: (p) => trackEvent('ViewContent', p),
+          addToCart: (p) => trackEvent('AddToCart', p),
+          initiateCheckout: (p) => trackEvent('InitiateCheckout', p),
+          purchase: (p) => trackEvent('Purchase', p),
+        };
+
+        // Inicializa automaticamente
+        initMetaPixel('1507627130505065');
+      })();
+    </script>
   </body>
 </html>
+
