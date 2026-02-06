@@ -1,34 +1,18 @@
 <script>
 /**
- * META PIXEL GLOBAL SCRIPT
- * - Carrega o Pixel uma única vez
- * - Funciona em sites normais e SPA
- * - Dispara PageView automaticamente
- * - Expõe eventos padrão
+ * META PIXEL – SPA GLOBAL DEFINITIVO
+ * Compatível com React, Vue, Next, qualquer SPA
  */
 
 (function () {
-  const MetaPixelGlobal = {
-    pixelId: null,
-    initialized: false,
-    lastUrl: location.href,
+  var PIXEL_ID = '1507627130505065';
+  var initialized = false;
 
-    init(pixelId) {
-      if (!pixelId) {
-        console.warn('[MetaPixel] Pixel ID não informado');
-        return;
-      }
+  // ===== Carrega o Pixel =====
+  function loadPixel() {
+    if (initialized) return;
 
-      this.pixelId = pixelId;
-
-      // Evita carregar duas vezes
-      if (window.fbq && window.fbq.loaded) {
-        console.log('[MetaPixel] Pixel já carregado');
-        this.initialized = true;
-        return;
-      }
-
-      // Script oficial Meta
+    if (!window.fbq) {
       !(function (f, b, e, v, n, t, s) {
         if (f.fbq) return;
         n = f.fbq = function () {
@@ -47,60 +31,60 @@
         s = b.getElementsByTagName(e)[0];
         s.parentNode.insertBefore(t, s);
       })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+    }
 
-      fbq('init', pixelId);
-      fbq('track', 'PageView');
+    fbq('init', PIXEL_ID);
+    initialized = true;
 
-      this.initialized = true;
+    console.log('[MetaPixel] Pixel carregado');
+  }
 
-      console.log('[MetaPixel] Pixel inicializado:', pixelId);
+  // ===== PageView seguro =====
+  function trackPageView() {
+    if (!window.fbq || !initialized) return;
+    fbq('track', 'PageView');
+    console.log('[MetaPixel] PageView:', location.pathname);
+  }
+
+  // ===== Intercepta SPA =====
+  function hookHistory() {
+    var pushState = history.pushState;
+    var replaceState = history.replaceState;
+
+    history.pushState = function () {
+      pushState.apply(this, arguments);
+      trackPageView();
+    };
+
+    history.replaceState = function () {
+      replaceState.apply(this, arguments);
+      trackPageView();
+    };
+
+    window.addEventListener('popstate', function () {
+      trackPageView();
+    });
+  }
+
+  // ===== Eventos globais =====
+  window.MetaPixel = {
+    viewContent: function (p) {
+      fbq('track', 'ViewContent', p || {});
     },
-
-    track(event, params = {}) {
-      if (!window.fbq || !this.initialized) return;
-      fbq('track', event, params);
-      console.log('[MetaPixel] Evento:', event, params);
+    addToCart: function (p) {
+      fbq('track', 'AddToCart', p || {});
     },
-
-    pageView() {
-      this.track('PageView');
+    initiateCheckout: function (p) {
+      fbq('track', 'InitiateCheckout', p || {});
     },
-
-    viewContent(params) {
-      this.track('ViewContent', params);
-    },
-
-    addToCart(params) {
-      this.track('AddToCart', params);
-    },
-
-    initiateCheckout(params) {
-      this.track('InitiateCheckout', params);
-    },
-
-    purchase(params) {
-      this.track('Purchase', params);
-    },
-
-    // Detecta navegação SPA
-    watchUrlChange() {
-      setInterval(() => {
-        if (this.lastUrl !== location.href) {
-          this.lastUrl = location.href;
-          console.log('[MetaPixel] Mudança de página detectada');
-          this.pageView();
-        }
-      }, 500);
+    purchase: function (p) {
+      fbq('track', 'Purchase', p || {});
     }
   };
 
-  // Expondo globalmente
-  window.MetaPixel = MetaPixelGlobal;
-
-  // 🔥 INICIALIZA AQUI
-  MetaPixelGlobal.init('SEU_PIXEL_ID_AQUI');
-
-  // 🔥 MONITORA TROCA DE PÁGINA (SPA)
-  MetaPixelGlobal.watchUrlChange();
+  // ===== Init =====
+  loadPixel();
+  trackPageView(); // primeira página
+  hookHistory();
 })();
 </script>
