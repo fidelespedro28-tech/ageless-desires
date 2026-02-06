@@ -1,11 +1,12 @@
-<!-- Meta Pixel SPA DEFINITIVO -->
+<!-- Meta Pixel SPA SAFE (NÃO quebra React) -->
 <script>
 (function () {
   var PIXEL_ID = '1507627130505065';
-  var pixelInitialized = false;
+  var initialized = false;
+  var lastUrl = location.href;
 
   function loadPixel() {
-    if (pixelInitialized) return;
+    if (initialized) return;
 
     !(function (f, b, e, v, n, t, s) {
       if (f.fbq) return;
@@ -27,56 +28,48 @@
     })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
 
     fbq('init', PIXEL_ID);
-    pixelInitialized = true;
+    initialized = true;
 
     console.log('[MetaPixel] Pixel carregado');
   }
 
   function trackPageView() {
-    if (!window.fbq || !pixelInitialized) return;
+    if (!window.fbq || !initialized) return;
     fbq('track', 'PageView');
     console.log('[MetaPixel] PageView:', location.pathname);
   }
 
-  function hookHistory() {
-    var pushState = history.pushState;
-    var replaceState = history.replaceState;
-
-    history.pushState = function () {
-      pushState.apply(this, arguments);
-      trackPageView();
-    };
-
-    history.replaceState = function () {
-      replaceState.apply(this, arguments);
-      trackPageView();
-    };
-
-    window.addEventListener('popstate', function () {
-      trackPageView();
-    });
+  // 🔒 NÃO mexe no history
+  function observeUrlChange() {
+    new MutationObserver(function () {
+      if (location.href !== lastUrl) {
+        lastUrl = location.href;
+        trackPageView();
+      }
+    }).observe(document, { subtree: true, childList: true });
   }
 
   // Eventos globais
   window.MetaPixel = {
-    viewContent: function (params) {
-      fbq('track', 'ViewContent', params || {});
+    viewContent: function (p) {
+      fbq('track', 'ViewContent', p || {});
     },
-    lead: function (params) {
-      fbq('track', 'Lead', params || {});
+    lead: function (p) {
+      fbq('track', 'Lead', p || {});
     },
-    initiateCheckout: function (params) {
-      fbq('track', 'InitiateCheckout', params || {});
+    initiateCheckout: function (p) {
+      fbq('track', 'InitiateCheckout', p || {});
     },
-    purchase: function (params) {
-      fbq('track', 'Purchase', params || {});
+    purchase: function (p) {
+      fbq('track', 'Purchase', p || {});
     }
   };
 
-  // INIT
-  loadPixel();
-  trackPageView();   // primeira página
-  hookHistory();     // SPA
+  // ⏳ Espera o site carregar
+  window.addEventListener('load', function () {
+    loadPixel();
+    trackPageView();      // primeira página
+    observeUrlChange();   // SPA
+  });
 })();
 </script>
-
