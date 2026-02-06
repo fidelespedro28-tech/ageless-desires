@@ -1,66 +1,106 @@
-import { useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
-
-declare global {
-  interface Window {
-    fbq: (...args: unknown[]) => void;
-  }
-}
-
+<script>
 /**
- * Meta Pixel ID: 1507627130505065
- * 
- * PageView inicial: disparado APENAS no index.html (HEAD)
- * Este componente: dispara PageView SOMENTE em navegações SPA
+ * META PIXEL GLOBAL SCRIPT
+ * - Carrega o Pixel uma única vez
+ * - Funciona em sites normais e SPA
+ * - Dispara PageView automaticamente
+ * - Expõe eventos padrão
  */
-const FacebookPixel = () => {
-  const location = useLocation();
-  const isFirstLoad = useRef(true);
-  const lastPath = useRef(location.pathname);
 
-  useEffect(() => {
-    // Pula o primeiro render - PageView já foi disparado no index.html
-    if (isFirstLoad.current) {
-      isFirstLoad.current = false;
-      return;
-    }
+(function () {
+  const MetaPixelGlobal = {
+    pixelId: null,
+    initialized: false,
+    lastUrl: location.href,
 
-    // Só dispara se a rota realmente mudou
-    if (lastPath.current !== location.pathname) {
-      lastPath.current = location.pathname;
-
-      if (typeof window !== "undefined" && typeof window.fbq === "function") {
-        window.fbq("track", "PageView");
+    init(pixelId) {
+      if (!pixelId) {
+        console.warn('[MetaPixel] Pixel ID não informado');
+        return;
       }
+
+      this.pixelId = pixelId;
+
+      // Evita carregar duas vezes
+      if (window.fbq && window.fbq.loaded) {
+        console.log('[MetaPixel] Pixel já carregado');
+        this.initialized = true;
+        return;
+      }
+
+      // Script oficial Meta
+      !(function (f, b, e, v, n, t, s) {
+        if (f.fbq) return;
+        n = f.fbq = function () {
+          n.callMethod
+            ? n.callMethod.apply(n, arguments)
+            : n.queue.push(arguments);
+        };
+        if (!f._fbq) f._fbq = n;
+        n.push = n;
+        n.loaded = true;
+        n.version = '2.0';
+        n.queue = [];
+        t = b.createElement(e);
+        t.async = true;
+        t.src = v;
+        s = b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t, s);
+      })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+
+      fbq('init', pixelId);
+      fbq('track', 'PageView');
+
+      this.initialized = true;
+
+      console.log('[MetaPixel] Pixel inicializado:', pixelId);
+    },
+
+    track(event, params = {}) {
+      if (!window.fbq || !this.initialized) return;
+      fbq('track', event, params);
+      console.log('[MetaPixel] Evento:', event, params);
+    },
+
+    pageView() {
+      this.track('PageView');
+    },
+
+    viewContent(params) {
+      this.track('ViewContent', params);
+    },
+
+    addToCart(params) {
+      this.track('AddToCart', params);
+    },
+
+    initiateCheckout(params) {
+      this.track('InitiateCheckout', params);
+    },
+
+    purchase(params) {
+      this.track('Purchase', params);
+    },
+
+    // Detecta navegação SPA
+    watchUrlChange() {
+      setInterval(() => {
+        if (this.lastUrl !== location.href) {
+          this.lastUrl = location.href;
+          console.log('[MetaPixel] Mudança de página detectada');
+          this.pageView();
+        }
+      }, 500);
     }
-  }, [location.pathname]);
+  };
 
-  return null;
-};
+  // Expondo globalmente
+  window.MetaPixel = MetaPixelGlobal;
 
-/**
- * Dispara evento ViewContent para visualização de perfis
- */
-export const trackViewContent = (contentName: string, contentType = "profile") => {
-  if (typeof window !== "undefined" && typeof window.fbq === "function") {
-    window.fbq("track", "ViewContent", {
-      content_name: contentName,
-      content_type: contentType,
-    });
-  }
-};
+  // 🔥 INICIALIZA AQUI
+  MetaPixelGlobal.init('SEU_PIXEL_ID_AQUI');
 
-/**
- * Dispara evento Purchase para confirmação de compra
- */
-export const trackPurchase = (value: number, currency = "BRL", contentName?: string) => {
-  if (typeof window !== "undefined" && typeof window.fbq === "function") {
-    window.fbq("track", "Purchase", {
-      value,
-      currency,
-      content_name: contentName || "VIP Plan",
-    });
-  }
-};
-
-export default FacebookPixel;
+  // 🔥 MONITORA TROCA DE PÁGINA (SPA)
+  MetaPixelGlobal.watchUrlChange();
+})();
+</script>
