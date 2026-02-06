@@ -188,13 +188,13 @@
     const scripts = document.querySelectorAll("script");
     let pixelFound = false;
     scripts.forEach(script => {
-      if (script.innerHTML && script.innerHTML.includes("1420518226437517")) {
+      if (script.innerHTML && script.innerHTML.includes("1507627130505065")) {
         pixelFound = true;
       }
     });
     return { 
       success: pixelFound, 
-      data: pixelFound ? "Pixel ID: 1420518226437517" : null,
+      data: pixelFound ? "Pixel ID: 1507627130505065" : null,
       message: "Pixel não encontrado no HTML" 
     };
   });
