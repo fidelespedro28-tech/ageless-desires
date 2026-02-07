@@ -1,90 +1,33 @@
-<script>
-/**
- * META PIXEL – SPA GLOBAL DEFINITIVO
- * Compatível com React, Vue, Next, qualquer SPA
- */
+import { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 
-(function () {
-  var PIXEL_ID = '1507627130505065';
-  var initialized = false;
+declare global {
+  interface Window {
+    fbq: (...args: unknown[]) => void;
+    _fbq: unknown;
+  }
+}
 
-  // ===== Carrega o Pixel =====
-  function loadPixel() {
-    if (initialized) return;
+const PIXEL_ID = '1507627130505065';
 
-    if (!window.fbq) {
-      !(function (f, b, e, v, n, t, s) {
-        if (f.fbq) return;
-        n = f.fbq = function () {
-          n.callMethod
-            ? n.callMethod.apply(n, arguments)
-            : n.queue.push(arguments);
-        };
-        if (!f._fbq) f._fbq = n;
-        n.push = n;
-        n.loaded = true;
-        n.version = '2.0';
-        n.queue = [];
-        t = b.createElement(e);
-        t.async = true;
-        t.src = v;
-        s = b.getElementsByTagName(e)[0];
-        s.parentNode.insertBefore(t, s);
-      })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+const FacebookPixel = () => {
+  const location = useLocation();
+  const isFirstRender = useRef(true);
+
+  // Dispara PageView a cada mudança de rota (exceto a primeira, que já foi disparada no index.html)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
 
-    fbq('init', PIXEL_ID);
-    initialized = true;
-
-    console.log('[MetaPixel] Pixel carregado');
-  }
-
-  // ===== PageView seguro =====
-  function trackPageView() {
-    if (!window.fbq || !initialized) return;
-    fbq('track', 'PageView');
-    console.log('[MetaPixel] PageView:', location.pathname);
-  }
-
-  // ===== Intercepta SPA =====
-  function hookHistory() {
-    var pushState = history.pushState;
-    var replaceState = history.replaceState;
-
-    history.pushState = function () {
-      pushState.apply(this, arguments);
-      trackPageView();
-    };
-
-    history.replaceState = function () {
-      replaceState.apply(this, arguments);
-      trackPageView();
-    };
-
-    window.addEventListener('popstate', function () {
-      trackPageView();
-    });
-  }
-
-  // ===== Eventos globais =====
-  window.MetaPixel = {
-    viewContent: function (p) {
-      fbq('track', 'ViewContent', p || {});
-    },
-    addToCart: function (p) {
-      fbq('track', 'AddToCart', p || {});
-    },
-    initiateCheckout: function (p) {
-      fbq('track', 'InitiateCheckout', p || {});
-    },
-    purchase: function (p) {
-      fbq('track', 'Purchase', p || {});
+    if (typeof window.fbq === 'function') {
+      window.fbq('track', 'PageView');
+      console.log('[MetaPixel] PageView SPA:', location.pathname);
     }
-  };
+  }, [location.pathname]);
 
-  // ===== Init =====
-  loadPixel();
-  trackPageView(); // primeira página
-  hookHistory();
-})();
-</script>
+  return null;
+};
+
+export default FacebookPixel;
